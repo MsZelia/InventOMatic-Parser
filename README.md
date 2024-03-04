@@ -1,7 +1,9 @@
 # Script for parsing inventory dump from Invent-O-Matic Stash for Fallout 76
 
+[View on NexusMods](https://www.nexusmods.com/fallout76/mods/2285)
+
 > [!NOTE]
-> I have no previous professional experience with python, if you want optimized or clean code you can do it yourself
+> I have no previous professional experience with python, if you want optimized or clean code you are free to do it yourself
 
 > [!IMPORTANT]
 > WORKS ONLY FOR ENGLISH VERSION OF GAME
