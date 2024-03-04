@@ -3,7 +3,7 @@
 > [!NOTE]
 > I have no previous professional experience with python, if you want optimized or clean code you can do it yourself
 
-> [!NOTE]
+> [!IMPORTANT]
 > WORKS ONLY FOR ENGLISH VERSION OF GAME
 
 ### Legendary effects
