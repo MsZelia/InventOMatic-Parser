@@ -13,6 +13,7 @@
 ### Armor
 - TYPE and PIECE are extracted from item name - DOES NOT WORK for renamed armor pieces
 - GRADE is extracted from item name (Heavy/Sturdy) and from damage/energy/radiation resistances - Combat, Leather, Metal, Raider and Robot armor
+  - if unable to detect, resistances will be displayed in format dr/er/rr
 
 ### Apparel
 - Legendary effects are extracted and displayed the same way as armor effects
