@@ -1,6 +1,9 @@
+import asyncio
+import aiohttp
 import json
 import time
 import argparse
+import numbers
 from os.path import exists
 
 start_time = time.time()
@@ -1075,6 +1078,209 @@ weapon_effects = [
     }
 ]
 
+fed76_weapon_abbrs = [
+    {
+        "44 Pistol": "44revolver",
+        "50 Cal": "50cal",
+        "10mm Pistol": "10mm",
+        "10mm Submachine": "10mmsub",
+        "Alien Blaster": "alien",
+        "Assault Rifle": "assault",
+        "Auto Grenade": "autolauncher",
+        "Blunderbuss": "blunderbuss",
+        "Powder Pistol": "powderpistol",
+        "Powder Rifle": "powderrifle",
+        "Broadsider": "broadsider",
+        "Combat Rifle": "combatrifle",
+        "Combat Shotgun": "combatshotgun",
+        "Compound": "compound",
+        "Crossbow": "crossbow",
+        "Bow": "bow",
+        "Cryolator": "cryolator",
+        "Double-Barrel": "doublebarrel",
+        "Enclave Plasma": "enclave",
+        "Fat Man": "fatman",
+        "Flamer": "flamer",
+        "Napalmer": "flamer",
+        "Gamma": "gamma",
+        "Gatling Gun": "gatling",
+        "Gatling Laser": "gatlaser",
+        "Gatling Plasma": "gatplasma",
+        "Gauss Rifle": "gauss",
+        "Handmade": "handmade",
+        "Harpoon": "harpoon",
+        "Hunting Rifle": "hunting",
+        "Laser Pistol": "laser",
+        "Laser Rifle": "laser",
+        "Laser Sniper Rifle": "laser",
+        "Lever Action": "lever",
+        "Light Machine Gun": "lmg",
+        "M79": "grenadelauncher",
+        "Minigun": "minigun",
+        "Missile Launcher": "misslelauncher",
+        "Pepper Shaker": "pepper",
+        "Pipe Bolt-Action": "pipebolt",
+        "Pipe Pistol": "pipe",
+        "Pipe Rifle": "pipe",
+        "Pipe Revolver": "piperevolver",
+        "Plasma Pistol": "plasma",
+        "Plasma Rifle": "plasma",
+        "Plasma Sniper Rifle": "plasma",
+        "Plasma Thrower": "plasma",
+        "Plasma Shotgun": "plasma",
+        "Plasma Sniper Rifle": "plasma",
+        "Pump Action Shotgun": "pump",
+        "Radium ": "radium",
+        "Railway": "railway",
+        "Assaultron Head": "assaulthead",
+        "Single Action Revolver": "singlerevolver",
+        "Submachine Gun": "submachine",
+        "Tesla": "tesla",
+        "Dragon": "dragon",
+        "Fixer": "fixer",
+        "Ultracite Gatling Laser": "ultragatling",
+        "Ultracite Laser": "ultralaser",
+        "Western Revolver": "western",
+        
+        "Assaultron Blade": "assaultblade",
+        "Baseball Bat": "baseball",
+        "Baton": "baton",
+        "Bear Arm": "bear",
+        "Board": "board",
+        "Bone Club": "boneclub",
+        "Bone Hammer": "bonehammer",
+        "Bowie Knife": "bowie",
+        "Boxing Glove": "box",
+        "Chainsaw": "chainsaw",
+        "Chinese Officer Sword": "chinesesword",
+        "Combat Knife": "combatknife",
+        "Cultist Blade": "cultistblade",
+        "Cultist Dagger": "cultistdagger",
+        "Tambo": "tambo",
+        "Deathclaw Gauntlet": "deathclaw",
+        "Drill": "drill",
+        "Fire Axe": "fireaxe",
+        "Golf Club": "golfclub",
+        "Grognak's Axe": "grognak",
+        "Guitar Sword": "guitarsword",
+        "Hatchet": "hatchet",
+        "Knuckles": "knuckles",
+        "Lead Pipe": "leadpipe",
+        "Machete": "machete",
+        "Meat Hook": "meathook",
+        "Mole Miner Gauntlet": "molegauntlet",
+        "Buzz Blade": "buzzblade",
+        "Multi-Purpose Axe": "multiaxe",
+        "Pickaxe": "pickaxe",
+        "Pipe Wrench": "pipewrench",
+        "Pitchfork": "pitchfork",
+        "Pole Hook": "polehook",
+        "Pool Cue": "pool",
+        "Power Fist": "powerfist",
+        "Revolutionary Sword": "revolutionarysword",
+        "Ripper": "ripper",
+        "Rolling Pin": "rollingpin",
+        "Shepherd's Crook": "shepherdscrook",
+        "Sheepsquatch Club": "sheepclub",
+        "Sheepsquatch Staff": "sheepstaff",
+        "Shishkebab": "shishkebab",
+        "Shovel": "shovel",
+        "Sickle": "sickle",
+        "Ski Sword": "skisword",
+        "Sledgehammer": "sledgehammer",
+        "Spear": "spear",
+        "Super Sledge": "supersledge",
+        "Switchblade": "switchblade",
+        "The Tenderizer": "Tender",
+        "Tire Iron": "tireiron",
+        "Walking Cane": "walkingcane",
+        "War Drum": "wardrum"
+    },
+    {
+        "ass": "a",
+        "ber": "br",
+        "gou": "gour",
+        "med": "m",
+        "sup": "su",
+        "tro": "t",
+        "ms": "mutslayer"
+    },
+    {
+        "25": "ffr",
+        "50c": "50",
+        "e3": "e",
+        "ap": "ine",
+        "25a": "hit",
+        "sent": "ste",
+        "block": "50r",
+        "bash": "50b"
+    },
+    {
+        "s": "str",
+        "p": "per",
+        "e": "end",
+        "a": "agi",
+        "50": "50dr",
+        "block": "15b",
+        "stealth": "gho"
+    }
+]
+
+fed76_armor_abbrs = [
+    {
+        "Combat": "combat",
+        "Leather": "leather",
+        "Marine": "marine",
+        "Metal": "metal",
+        "Raider": "raider",
+        "Robot": "robot",
+        "Urban": "scout",
+        "Forest": "scout",
+        "Trapper": "trapper",
+        "Wood": "wood"
+    },
+    {
+        "ass": "assn",
+        "auto": "autostim",
+        "bol": "bolst",
+        "gs": "ghoulslayer",
+        "h": "hunter",
+        "ls": "lifesaving",
+        "ms": "mutslayer",
+        "mu": "mut",
+        "n": "noct",
+        "oe": "over",
+        "r": "regen",
+        "tro": "troubleshooter",
+        "u": "uny",
+        "v": "vang",
+        "w": "weightless",
+        "z": "zealot"
+    },
+    {
+        "luck": "lck",
+        "25c": "warm",
+        "25d": "env",
+        "25f": "fire",
+        "25r": "rad",
+        "25p": "poison"
+    },
+    {
+        "fwr": "food",
+        "awr": "ammo",
+        "jwr": "junk",
+        "wwr": "wpn",
+        "block": "blocker",
+        "cryo": "icy",
+        "energy": "ele",
+        "fire": "burn",
+        "poison": "tox",
+        "rad": "diss",
+        "ldr": "limb",
+        "lock": "safe"
+    }
+]
+
 filter_flags = {
     4: "weapon",
     8: "armor",
@@ -1164,6 +1370,41 @@ def remove_prefixes(item_text: str, prefixes_to_remove):
     return new_text
 
 
+def format_for_pricecheck(item_text: str, item_legendary_abbr, fed76_abbrs, armor_grade: str = None):
+    item_arg = ''
+    for item in fed76_abbrs[0]:
+        if item_text.find(item) != -1:
+            item_arg = fed76_abbrs[0][item]
+            if not armor_grade:
+                if item == 'bow' and item_text.find('Compound') != -1:
+                    item_arg = fed76_abbrs[0]['Compound']
+                break
+            else:
+                if item_text == 'Raider Power':
+                    return ''
+    
+    if not item_arg:
+        return ''
+    
+    abbr_arg = ''
+    for k in range(len(item_legendary_abbr)):
+        if not item_legendary_abbr[k]:
+            break
+        
+        if abbr_arg:
+            abbr_arg = abbr_arg + '%2F'
+            
+        if item_legendary_abbr[k] in fed76_abbrs[k + 1]:
+            abbr_arg = abbr_arg + fed76_abbrs[k + 1][item_legendary_abbr[k]]
+        else:
+            abbr_arg = abbr_arg + item_legendary_abbr[k]
+
+    if armor_grade:
+        return item_arg + '&effects=' + abbr_arg + '&grade=' + armor_grade
+    else:
+        return item_arg + '&effects=' + abbr_arg
+
+
 def main():
     parser = argparse.ArgumentParser(
         prog='InventOMatic-Parser',
@@ -1173,10 +1414,15 @@ def main():
                         help='Path to inventory dump file')
     parser.add_argument('-s', metavar='separator', type=str, default='\t',
                         help='Optional output value separator, default is TAB')
+    parser.add_argument('-pc', action='store_true',
+                        help='Request price checks from fed76.info \
+                        (significantly increases processing time)')
 
     args = parser.parse_args()
     filename = args.f
     separator = args.s
+    is_pricecheck = args.pc
+    pricecheck_api_url = "https://fed76.info/pricing-api/?item="
 
     if not exists(filename):
         print('Invalid file path %s' % (filename))
@@ -1188,6 +1434,7 @@ def main():
     count_armor = 0
     count_weapon = 0
     count_other = 0
+    count_duplicate = 0
     item_text = ''
     item_type = ''
     item_desc = ''
@@ -1196,13 +1443,17 @@ def main():
     item_legendary_stars = 0
     item_effects = ['', '', '']
     item_name_short = ''
+    items = {}
+    pricecheck_urls = {}
 
     for character_name in data['characterInventories']:
         account_name = data['characterInventories'][character_name].get('AccountInfoData').get('name')
         print('Account: %s, Character: %s' % (account_name, character_name))
         print('Item Name', 'Count', 'Item Type', 'Type', 'Armor Piece', 'Armor Grade', 
                   'Stars', 'Level', 'Abbr', 'Prefix', 'Major', 'Minor', 'Account',
-                  'Char', 'Source', 'Full Item name', sep=separator)
+                  'Char', 'Source', 'Full Item name',
+                  'FED76 Price', 'Quicksale', 'Low', 'High', 'Niche',
+                  sep=separator)
 
         for item_source in item_sources:
             if not data['characterInventories'][character_name].get(item_source):
@@ -1212,6 +1463,8 @@ def main():
                 item_text = item['text']
                 item_count = item['count']
                 item_desc = ''
+                existing_count = 0
+
                 item_type = filter_flags.get(
                     item['filterFlag']) or filter_flags.get(
                     item['filterFlag']^0x1) or item['filterFlag'] # favourited items have 0x1 flag set
@@ -1221,6 +1474,7 @@ def main():
                     armor_dr = 0
                     armor_er = 0
                     armor_rr = 0
+                    is_pricecheck_abbr_valid = True
                     item_level = str(item['itemLevel'])
                     item_legendary_stars = item['numLegendaryStars']
                     for item_card_entry in item['ItemCardEntries']:
@@ -1242,6 +1496,8 @@ def main():
                     for k in range(len(abbrs)):
                         if abbrs[k] != '':
                             item_effects[k] = (armor_effects[k][abbrs[k]])
+                        else:
+                            is_pricecheck_abbr_valid = False
 
                     if item_legendary_stars > 1 and abbrs[1] == '25r':
                         armor_rr -= 25
@@ -1250,12 +1506,13 @@ def main():
 
                     armor_type = get_armor_type(item_text)
                     armor_piece = get_armor_piece(item_text)
-                    
+
                     armor_grade = ''
                     if armor_type in graded_armor:
                         armor_grade = get_armor_grade(item_text)
                         if armor_grade == '' and armor_piece and armor_type:
                             armor_grade = lookup_armor_grade(item_text, armor_type, armor_piece, item_level, armor_dr, armor_er, armor_rr)
+
 
                     item_name_short = remove_prefixes(
                         item_text, armor_effects[0])
@@ -1263,24 +1520,55 @@ def main():
                         item_name_short, armor_prefixes_to_remove)
 
                     count_armor += 1
-                    print(item_name_short,
-                          item_count,
-                          item_type,
-                          armor_type,
-                          armor_piece,
-                          armor_grade,
-                          item_legendary_stars,
-                          item_level,
-                          item_legendary_abbr,
-                          item_effects[0], item_effects[1], item_effects[2],
-                          account_name,
-                          character_name,
-                          item_sources[item_source],
-                          item_text,
-                          sep=separator)
+                    if (is_pricecheck
+                        and armor_type
+                        and item['isTradable']
+                        and int(item_level) >= 45
+                        and is_pricecheck_abbr_valid
+                        and armor_grade.find('/') == -1):
+                        pricecheck_arg = format_for_pricecheck(armor_type, abbrs, fed76_armor_abbrs, armor_grade or 'Sturdy')
+                        url = pricecheck_api_url + pricecheck_arg
+                        if pricecheck_arg and url in pricecheck_urls:
+                            existing_count = pricecheck_urls[url][1]
+                            count_duplicate += 1
+                        if pricecheck_arg:
+                            pricecheck_urls[url] = [item_name_short,
+                                item_count + existing_count,
+                                item_type,
+                                armor_type,
+                                armor_piece,
+                                armor_grade,
+                                item_legendary_stars,
+                                item_level,
+                                item_legendary_abbr,
+                                item_effects[0], item_effects[1], item_effects[2],
+                                account_name,
+                                character_name,
+                                item_sources[item_source],
+                                item_text]
+                            continue
+                    item_id = str.format("%s %s %s %s %s" % (armor_type, armor_grade, armor_piece, item_legendary_abbr, item_level))
+                    if item_id in items:
+                        existing_count = items[item_id][1]
+                        count_duplicate += 1
+                    items[item_id] = [item_name_short,
+                        item_count,
+                        item_type,
+                        armor_type,
+                        armor_piece,
+                        armor_grade,
+                        item_legendary_stars,
+                        item_level,
+                        item_legendary_abbr,
+                        item_effects[0], item_effects[1], item_effects[2],
+                        account_name,
+                        character_name,
+                        item_sources[item_source],
+                        item_text]
 
                 # LEGENDARY WEAPONS
                 elif item_type == 'weapon' and item['itemLevel'] != 0:
+                    is_pricecheck_abbr_valid = True
                     item_level = str(item['itemLevel'])
                     item_legendary_stars = item['numLegendaryStars']
                     weapon_type = 'Ranged'
@@ -1300,6 +1588,8 @@ def main():
                     for k in range(len(abbrs)):
                         if abbrs[k] != '':
                             item_effects[k] = (weapon_effects[k][abbrs[k]])
+                        else:
+                            is_pricecheck_abbr_valid = False
 
                     item_name_short = remove_prefixes(
                         item_text, weapon_effects[0])
@@ -1307,20 +1597,47 @@ def main():
                         item_name_short, weapon_prefixes_to_remove)
 
                     count_weapon += 1
-                    print(item_name_short,
-                          item_count,
-                          item_type,
-                          weapon_type,
-                          '', '',
-                          item_legendary_stars,
-                          item_level,
-                          item_legendary_abbr,
-                          item_effects[0], item_effects[1], item_effects[2],
-                          account_name,
-                          character_name,
-                          item_sources[item_source],
-                          item_text,
-                          sep=separator)
+                    if (is_pricecheck
+                        and item['isTradable']
+                        and item['itemLevel'] >= 45
+                        and is_pricecheck_abbr_valid):
+                        pricecheck_arg = format_for_pricecheck(item_text, abbrs, fed76_weapon_abbrs)
+                        url = pricecheck_api_url + pricecheck_arg
+                        if url in pricecheck_urls:
+                            existing_count = pricecheck_urls[url][1]
+                            count_duplicate += 1
+                        if pricecheck_arg:
+                            pricecheck_urls[url] = [item_name_short,
+                                item_count + existing_count,
+                                item_type,
+                                weapon_type,
+                                '', '',
+                                item_legendary_stars,
+                                item_level,
+                                item_legendary_abbr,
+                                item_effects[0], item_effects[1], item_effects[2],
+                                account_name,
+                                character_name,
+                                item_sources[item_source],
+                                item_text]
+                            continue
+                    item_id = str.format("%s %s %s" % (item_name_short, item_legendary_abbr, item_level))
+                    if item_id in items:
+                        existing_count = items[item_id][1]
+                        count_duplicate += 1
+                    items[item_id] = [item_name_short,
+                            item_count + existing_count,
+                            item_type,
+                            weapon_type,
+                            '', '',
+                            item_legendary_stars,
+                            item_level,
+                            item_legendary_abbr,
+                            item_effects[0], item_effects[1], item_effects[2],
+                            account_name,
+                            character_name,
+                            item_sources[item_source],
+                            item_text]
 
                 # LEGENDARY APPAREL
                 elif item_type == 'apparel' and item_legendary_stars != 0:
@@ -1359,10 +1676,56 @@ def main():
                     count_other += 1
                     print(item_text, item_count, item_type, sep=separator)
 
+    parse_time = time.time()
 
-    print('\nItems processed: %s armor, %s weapon, %s other, %s items total'
-          % (count_armor, count_weapon, count_other, count_other + count_weapon + count_armor))
-    print('Process finished in %s seconds' % (time.time() - start_time))
+    if is_pricecheck:
+        conn = aiohttp.TCPConnector(limit_per_host=100, limit=0, ttl_dns_cache=300)
+        PARALLEL_REQUESTS = 6
+        results = {}
+
+        async def gather_with_concurrency(n):
+            semaphore = asyncio.Semaphore(n)
+            session = aiohttp.ClientSession(connector=conn)
+
+            async def get(url):
+                async with semaphore:
+                    async with session.get(url, ssl=False) as response:
+                        obj = json.loads(await response.read())
+                        if response.status == 200:
+                            results[url] = obj
+                        else:
+                            print("Error pricechecking %s" % url)
+            await asyncio.gather(*(get(url) for url in pricecheck_urls))
+            await session.close()
+
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(gather_with_concurrency(PARALLEL_REQUESTS))
+        conn.close()
+
+        for result in results:
+            price = results[result]['price']
+            if isinstance(1, numbers.Number):
+                price = int(price)
+            pricecheck_urls[result].append(price)
+            pricecheck_urls[result].append(results[result]['review']['details']['vendor'])
+            pricecheck_urls[result].append(results[result]['review']['details']['market-low'])
+            pricecheck_urls[result].append(results[result]['review']['details']['market-high'])
+            pricecheck_urls[result].append(results[result]['review']['details']['niche'])
+
+        for url in pricecheck_urls:
+            print(separator.join(map(str, pricecheck_urls[url])))
+
+    for item in items:
+        print(separator.join(map(str, items[item])))
+
+    if is_pricecheck:
+        print('\nPrices checked: %s (%s duplicates)' % (len(pricecheck_urls), count_duplicate))
+        print('Price check done in %s seconds' % (time.time() - parse_time))
+
+    print('\nFile parsed in %s seconds' % (parse_time - start_time))
+    print('Items processed: %s armor, %s weapon, %s other, %s items total (%s duplicates)'
+          % (count_armor, count_weapon, count_other, count_other + count_weapon + count_armor, count_duplicate))
+    print('\nProcess finished in %s seconds' % (time.time() - start_time))
     print('Written by Zelia')
 
 
