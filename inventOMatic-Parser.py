@@ -41,6 +41,8 @@ weapon_prefixes_to_remove = {
     37: "Tropic Lightning ",
     38: "Valorous Alistair ",
     39: "Vault-Tec ",
+    40: "All Star ",
+    41: "Flames ",
 
     # Weapon mods - TODO add missing ones
     70: "Targeting ",
@@ -54,6 +56,26 @@ weapon_prefixes_to_remove = {
     78: "Focused ",
     79: "Beta Wave ",
     80: "Automatic ",
+    81: "Bayoneted ",
+    82: "Puncturing ",
+    83: "Large ",
+    84: "Electrified ",
+    85: "Cursed ",
+    86: "Bladed ",
+    87: "Barbed ",
+    88: "Recoil Compensated ",
+    89: "Hardened ",
+    90: "High Capacity ",
+    91: "High Speed ",
+    92: "Night-Vision ",
+    93: "Marksman's ",
+    94: "Prime ",
+    95: "Compensated ",
+    96: "Recon ",
+    97: "Long ",
+    98: "Charging ",
+    99: "Scattered ",
+    100: "Maximum Capacity "
 }
 
 armor_prefixes_to_remove = {
@@ -1137,8 +1159,8 @@ def get_armor_piece(item_text):
 def remove_prefixes(item_text: str, prefixes_to_remove):
     new_text = item_text
     for prefix in prefixes_to_remove:
-        new_text = str.removeprefix(new_text, prefixes_to_remove[prefix])
-        new_text = new_text.strip()
+        if new_text.find(prefixes_to_remove[prefix]) != -1:
+            new_text = str.replace(new_text, prefixes_to_remove[prefix], '', 1).strip()
     return new_text
 
 
