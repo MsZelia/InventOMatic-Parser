@@ -1370,7 +1370,7 @@ def remove_prefixes(item_text: str, prefixes_to_remove):
     return new_text
 
 
-def format_for_pricecheck(item_text: str, item_legendary_abbr, fed76_abbrs, armor_grade: str = None):
+def format_for_pricecheck(item_text: str, item_legendary_abbr, fed76_abbrs, armor_grade: str = None, armor_piece: str = None):
     item_arg = ''
     for item in fed76_abbrs[0]:
         if item_text.find(item) != -1:
@@ -1400,7 +1400,7 @@ def format_for_pricecheck(item_text: str, item_legendary_abbr, fed76_abbrs, armo
             abbr_arg = abbr_arg + item_legendary_abbr[k]
 
     if armor_grade:
-        return item_arg + '&effects=' + abbr_arg + '&grade=' + armor_grade
+        return item_arg + '&effects=' + abbr_arg + '&grade=' + armor_grade + '&piece=' + armor_piece
     else:
         return item_arg + '&effects=' + abbr_arg
 
@@ -1435,6 +1435,7 @@ def main():
     count_weapon = 0
     count_other = 0
     count_duplicate = 0
+    count_duplicate_pc = 0
     item_text = ''
     item_type = ''
     item_desc = ''
@@ -1526,11 +1527,11 @@ def main():
                         and int(item_level) >= 45
                         and is_pricecheck_abbr_valid
                         and armor_grade.find('/') == -1):
-                        pricecheck_arg = format_for_pricecheck(armor_type, abbrs, fed76_armor_abbrs, armor_grade or 'Sturdy')
+                        pricecheck_arg = format_for_pricecheck(armor_type, abbrs, fed76_armor_abbrs, armor_grade or 'Sturdy', armor_piece)
                         url = pricecheck_api_url + pricecheck_arg
                         if pricecheck_arg and url in pricecheck_urls:
                             existing_count = pricecheck_urls[url][1]
-                            count_duplicate += 1
+                            count_duplicate_pc += 1
                         if pricecheck_arg:
                             pricecheck_urls[url] = [item_name_short,
                                 item_count + existing_count,
@@ -1547,7 +1548,7 @@ def main():
                                 item_sources[item_source],
                                 item_text]
                             continue
-                    item_id = str.format("%s %s %s %s %s" % (armor_type, armor_grade, armor_piece, item_legendary_abbr, item_level))
+                    item_id = str.format("%s %s %s %s %s %s" % (item_name_short, armor_type, armor_grade, armor_piece, item_legendary_abbr, item_level))
                     if item_id in items:
                         existing_count = items[item_id][1]
                         count_duplicate += 1
@@ -1605,7 +1606,7 @@ def main():
                         url = pricecheck_api_url + pricecheck_arg
                         if url in pricecheck_urls:
                             existing_count = pricecheck_urls[url][1]
-                            count_duplicate += 1
+                            count_duplicate_pc += 1
                         if pricecheck_arg:
                             pricecheck_urls[url] = [item_name_short,
                                 item_count + existing_count,
@@ -1719,7 +1720,7 @@ def main():
         print(separator.join(map(str, items[item])))
 
     if is_pricecheck:
-        print('\nPrices checked: %s (%s duplicates)' % (len(pricecheck_urls), count_duplicate))
+        print('\nPrices checked: %s (%s duplicates)' % (len(pricecheck_urls), count_duplicate_pc))
         print('Price check done in %s seconds' % (time.time() - parse_time))
 
     print('\nFile parsed in %s seconds' % (parse_time - start_time))
