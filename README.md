@@ -21,14 +21,17 @@
 - Legendary effects are extracted and displayed the same way as armor effects
 
 ### Other
-Displays only item name, count and item type (apparel/food/drink/aid/misc...)
+- Displays only item name, count and item type (apparel/food/drink/aid/misc...)
 
+### Price checking [-pc]
+- Uses [fed76.info/pricing](https://fed76.info/pricing) for price checking, pass -pc argument
+- Significantly increases processing time (100-200ms or more per item), could take few minutes for large lists
 
 
 ## Usage
 Default separator is TAB
 ```
-InventOMatic-Parser -f filename [-s separator]
+InventOMatic-Parser -f filename [-s separator] [-pc]
 ```
 
 Print to new file
