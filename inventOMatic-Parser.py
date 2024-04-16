@@ -1409,7 +1409,7 @@ def main():
     parser = argparse.ArgumentParser(
         prog='InventOMatic-Parser',
         description='Script for parsing inventory dump from invent-o-matic stash for Fallout 76',
-        epilog='Written by Zelia')
+        epilog='Version 1.1.2, Written by Zelia')
     parser.add_argument('-f', metavar='filename', type=str, required=True,
                         help='Path to inventory dump file')
     parser.add_argument('-s', metavar='separator', type=str, default='\t',
@@ -1449,7 +1449,7 @@ def main():
 
     for character_name in data['characterInventories']:
         account_name = data['characterInventories'][character_name].get('AccountInfoData').get('name')
-        print('Account: %s, Character: %s' % (account_name, character_name))
+        # print('Account: %s, Character: %s' % (account_name, character_name))
         print('Item Name', 'Count', 'Item Type', 'Type', 'Armor Piece', 'Armor Grade', 
                   'Stars', 'Level', 'Abbr', 'Prefix', 'Major', 'Minor', 'Account',
                   'Char', 'Source', 'Full Item name',
@@ -1500,7 +1500,7 @@ def main():
                         else:
                             is_pricecheck_abbr_valid = False
 
-                    if item_legendary_stars > 1 and abbrs[1] == '25r':
+                    if item_legendary_stars > 1 and len(abbrs) > 1 and abbrs[1] == '25r':
                         armor_rr -= 25
                     if str.find(item_text, 'Leaded') != -1:
                         armor_rr -= 10
@@ -1725,7 +1725,7 @@ def main():
 
     print('\nFile parsed in %s seconds' % (parse_time - start_time))
     print('Items processed: %s armor, %s weapon, %s other, %s items total (%s duplicates)'
-          % (count_armor, count_weapon, count_other, count_other + count_weapon + count_armor, count_duplicate))
+          % (count_armor, count_weapon, count_other, count_other + count_weapon + count_armor, count_duplicate + count_duplicate_pc))
     print('\nProcess finished in %s seconds' % (time.time() - start_time))
     print('Written by Zelia')
 
