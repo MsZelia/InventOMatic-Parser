@@ -883,7 +883,7 @@ armor_descriptions = [
         "doc": "effectiveness of stimpaks, radaway, and rad-x",
         "lock": "increases size of sweet-spot while picking locks",
         "rad": "0.25% radiation damage recovery",
-        "aqua": "grants the ability to breathe underwater",
+        "aqua": "breathe underwater",
         "titan": "reduces damage while standing and not moving",
     }
 ]
