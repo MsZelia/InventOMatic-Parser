@@ -4,7 +4,8 @@ import json
 import time
 import argparse
 import numbers
-from os.path import exists
+from os.path import exists, getmtime
+import pandas as pd
 
 start_time = time.time()
 
@@ -1020,8 +1021,8 @@ weapon_effects = [
         "aa": "Anti-armor",
         "ari": "Aristocrat's",
         "ass": "Assassin's",
-        "b": "Berserker's",
-        "ber": "Bloodied",
+        "b": "Bloodied",
+        "ber": "Berserker's",
         "exe": "Executioner's",
         "ext": "Exterminator's",
         "f": "Furious",
@@ -1405,11 +1406,34 @@ def format_for_pricecheck(item_text: str, item_legendary_abbr, fed76_abbrs, armo
         return item_arg + '&effects=' + abbr_arg
 
 
+def format_plan_prices(plan):
+    if(not plan or len(plan) < 18 or plan[15] == '' or not plan[17] or len(plan[17]) < 1):
+        return
+    
+    temp_price = str.replace(plan[17], '**Estimate:**', '', 1).strip()
+    temp_price = str.replace(temp_price, 'Available from NPC vendors for', '', 1).strip()
+    temp_price = str.replace(temp_price, 'caps', '', 1).strip()
+    prices = str.split(temp_price, '-', 1)
+    if(len(prices) == 2):
+        low = prices[0].strip()
+        high = prices[1].strip()
+        plan.append(low)
+        plan.append(high)
+    
+    if(str.find(plan[17], "NPC") != -1):
+        plan[17] = "NPC vendors"
+    elif(len(plan) == 20):
+        plan[17] = ''
+    else:
+        plan[17] = temp_price
+
+
+    
 def main():
     parser = argparse.ArgumentParser(
         prog='InventOMatic-Parser',
         description='Script for parsing inventory dump from invent-o-matic stash for Fallout 76',
-        epilog='Version 1.1.2, Written by Zelia')
+        epilog='Version 1.2, Written by Zelia')
     parser.add_argument('-f', metavar='filename', type=str, required=True,
                         help='Path to inventory dump file')
     parser.add_argument('-s', metavar='separator', type=str, default='\t',
@@ -1423,7 +1447,11 @@ def main():
     separator = args.s
     is_pricecheck = args.pc
     pricecheck_api_url = "https://fed76.info/pricing-api/?item="
-
+    pricecheck_plans_api_url = "https://fed76.info/plan-api/?id="
+    plan_database_url = r"https://docs.google.com/spreadsheets/d/1Ul78ln8sBzFVTcaNL42aWea6j9v6CXA7nMWnM6O56rk/export?format=xlsx"
+    plan_database_file = "PlanList.xlsx";
+    plan_database_file_cache_time = 3600
+    
     if not exists(filename):
         print('Invalid file path %s' % (filename))
         return
@@ -1431,11 +1459,14 @@ def main():
     with open(filename) as json_data:
         data = json.load(json_data)
 
+    plan_db_cached = -1
     count_armor = 0
     count_weapon = 0
+    count_plan = 0
     count_other = 0
     count_duplicate = 0
     count_duplicate_pc = 0
+    count_duplicate_plan_pc = 0
     item_text = ''
     item_type = ''
     item_desc = ''
@@ -1446,6 +1477,7 @@ def main():
     item_name_short = ''
     items = {}
     pricecheck_urls = {}
+    pricecheck_plans = {}
 
     for character_name in data['characterInventories']:
         account_name = data['characterInventories'][character_name].get('AccountInfoData').get('name')
@@ -1465,6 +1497,7 @@ def main():
                 item_count = item['count']
                 item_desc = ''
                 existing_count = 0
+                item_legendary_stars = item['numLegendaryStars']
 
                 item_type = filter_flags.get(
                     item['filterFlag']) or filter_flags.get(
@@ -1477,7 +1510,6 @@ def main():
                     armor_rr = 0
                     is_pricecheck_abbr_valid = True
                     item_level = str(item['itemLevel'])
-                    item_legendary_stars = item['numLegendaryStars']
                     for item_card_entry in item['ItemCardEntries']:
                         if item_card_entry['text'] == 'DESC':
                             item_desc = item_card_entry['value']
@@ -1571,7 +1603,6 @@ def main():
                 elif item_type == 'weapon' and item['itemLevel'] != 0:
                     is_pricecheck_abbr_valid = True
                     item_level = str(item['itemLevel'])
-                    item_legendary_stars = item['numLegendaryStars']
                     weapon_type = 'Ranged'
 
                     for item_card_entry in item['ItemCardEntries']:
@@ -1672,14 +1703,43 @@ def main():
                           item_text,
                           sep=separator)
 
+                # PLANS/RECIPES
+                elif item_type == 'note':
+                    count_plan += 1
+                    index = str.find(item_text, 'Plan')
+                    if index == -1:
+                        index = str.find(item_text, 'Recipe')
+                    note_name = item_text
+                    if (is_pricecheck and item['isTradable'] and index != -1):
+                        note_name = item_text[index:]
+                        if note_name in pricecheck_plans:
+                            existing_count = pricecheck_plans[note_name][1]
+                            count_duplicate_plan_pc += 1
+                        pricecheck_plans[note_name] = [item_text,
+                          item_count + existing_count,
+                          item_type,
+                          '', '', '', '', '', '', '', '', '',
+                          account_name,
+                          character_name,
+                          item_sources[item_source]]
+                        continue
+                    
+                    if note_name in items:
+                        existing_count = items[note_name][1]
+                        count_duplicate += 1
+                    items[note_name] = [item_text, item_count + existing_count, item_type]
+                    
                 # Apparel, aid, food/drink, mods, notes, misc, junk, ammo...
                 else:
                     count_other += 1
-                    print(item_text, item_count, item_type, sep=separator)
+                    if item_text in items:
+                        existing_count = items[item_text][1]
+                    items[item_text] = [item_text, item_count + existing_count, item_type]
 
     parse_time = time.time()
 
     if is_pricecheck:
+        # LEGENDARY PRICE CHECKING
         conn = aiohttp.TCPConnector(limit_per_host=100, limit=0, ttl_dns_cache=300)
         PARALLEL_REQUESTS = 6
         results = {}
@@ -1705,7 +1765,7 @@ def main():
 
         for result in results:
             price = results[result]['price']
-            if isinstance(1, numbers.Number):
+            if isinstance(price, numbers.Number):
                 price = int(price)
             pricecheck_urls[result].append(price)
             pricecheck_urls[result].append(results[result]['review']['details']['vendor'])
@@ -1713,20 +1773,81 @@ def main():
             pricecheck_urls[result].append(results[result]['review']['details']['market-high'])
             pricecheck_urls[result].append(results[result]['review']['details']['niche'])
 
+        legendary_pricecheck_time = time.time()
+        
+        # PLANS & RECIPES PRICE CHECKING
+        if(not exists(plan_database_file) or (time.time() - getmtime(plan_database_file)) > plan_database_file_cache_time):
+            df = pd.read_excel(plan_database_url)
+            df.to_excel(plan_database_file)
+        else:
+            plan_db_cached = int(1 + (time.time() - getmtime(plan_database_file)) / 60)
+        
+        df = pd.read_excel(plan_database_file, skiprows=9)
+        
+        fetch_plan_database_time = time.time()
+        
+        df_selected = df[['formid', 'name']]
+        empty_pref = "00000000"
+        for row in range(int(df_selected.size / 2)):
+            df_selected.values[row][1] = str.lower(df_selected.values[row][1])
+            if(len(str(df_selected.values[row][0])) < 8):
+                df_selected.values[row][0] = str(empty_pref + str(df_selected.values[row][0]))[-8:]
+        
+        for plan in pricecheck_plans:
+            plan_l = str.lower(plan)
+            for row in range(int(df_selected.size / 2)):
+                if(plan_l == df_selected.values[row][1]):
+                    pricecheck_plans[plan].append(df_selected.values[row][0])
+        
+        conn = aiohttp.TCPConnector(limit_per_host=100, limit=0, ttl_dns_cache=300)
+        async def gather_with_concurrency(n):
+            semaphore = asyncio.Semaphore(n)
+            session = aiohttp.ClientSession(connector=conn)
+
+            async def get(plan):
+                async with semaphore:
+                    if(len(plan) > 15 and plan[15] != ''):
+                        async with session.get(pricecheck_plans_api_url + plan[15], ssl=False) as response:
+                            obj = json.loads(await response.read())
+                            if response.status == 200:
+                                plan.append(obj['price'])
+                                plan.append(obj['verdict'])
+                            else:
+                                plan.append("Error pricechecking")
+            
+            await asyncio.gather(*(get(pricecheck_plans[plan]) for plan in pricecheck_plans))
+            await session.close()
+
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(gather_with_concurrency(PARALLEL_REQUESTS))
+        conn.close()
+        
+        plan_pricecheck_time = time.time()
+        
         for url in pricecheck_urls:
             print(separator.join(map(str, pricecheck_urls[url])))
+        
+        for plan in pricecheck_plans:
+            format_plan_prices(pricecheck_plans[plan])
+            print(separator.join(map(str, pricecheck_plans[plan])))
 
     for item in items:
         print(separator.join(map(str, items[item])))
 
+    print()
     if is_pricecheck:
-        print('\nPrices checked: %s (%s duplicates)' % (len(pricecheck_urls), count_duplicate_pc))
-        print('Price check done in %s seconds' % (time.time() - parse_time))
+        print('Prices checked: %s legendary, %s plans (%s duplicates)' % (len(pricecheck_urls), len(pricecheck_plans),
+                                                                            count_duplicate_pc + count_duplicate_plan_pc))
+        print('Plan database fetched in %s seconds %s' % (f'{fetch_plan_database_time - legendary_pricecheck_time:.4g}',
+                                                          "(cached %s minutes ago)" % plan_db_cached if plan_db_cached > 0 else '(url fetch)'))
+        print('Price check legendary done in %s seconds' % (f'{legendary_pricecheck_time - parse_time:.4g}'))
+        print('Price check plan/recipe done in %s seconds' % (f'{plan_pricecheck_time - fetch_plan_database_time:.4g}'))
 
-    print('\nFile parsed in %s seconds' % (parse_time - start_time))
-    print('Items processed: %s armor, %s weapon, %s other, %s items total (%s duplicates)'
-          % (count_armor, count_weapon, count_other, count_other + count_weapon + count_armor, count_duplicate + count_duplicate_pc))
-    print('\nProcess finished in %s seconds' % (time.time() - start_time))
+    print('Items processed: %s armor, %s weapon, %s plans, %s other, %s items total (%s duplicates)'
+          % (count_armor, count_weapon, count_plan, count_other, count_other + count_weapon + count_armor + count_plan,
+             count_duplicate + count_duplicate_pc))
+    print('File parsed in %s seconds' % (f'{parse_time - start_time:.4g}'))
+    print('Process finished in %s seconds' % (f'{time.time() - start_time:.4g}'))
     print('Written by Zelia')
 
 
