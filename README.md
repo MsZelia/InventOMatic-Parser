@@ -46,3 +46,7 @@ InventOMatic-Parser.py -f filename >> output.txt
 
 ### Invent O Matic Stash
 https://www.nexusmods.com/fallout76/mods/698
+
+
+### Invent O Matic Stash (Unofficial) Update for latest game version
+https://www.nexusmods.com/fallout76/mods/2335
