@@ -1709,13 +1709,11 @@ def main():
                     index = str.find(item_text, 'Plan')
                     if index == -1:
                         index = str.find(item_text, 'Recipe')
-                    note_name = item_text
                     if (is_pricecheck and item['isTradable'] and index != -1):
-                        note_name = item_text[index:]
-                        if note_name in pricecheck_plans:
-                            existing_count = pricecheck_plans[note_name][1]
-                            count_duplicate_plan_pc += 1
-                        pricecheck_plans[note_name] = [item_text,
+                        if item_text in pricecheck_plans:
+                            existing_count = pricecheck_plans[item_text][1]
+                            count_duplicate += 1
+                        pricecheck_plans[item_text] = [item_text,
                           item_count + existing_count,
                           item_type,
                           '', '', '', '', '', '', '', '', '',
@@ -1724,10 +1722,10 @@ def main():
                           item_sources[item_source]]
                         continue
                     
-                    if note_name in items:
-                        existing_count = items[note_name][1]
+                    if item_text in items:
+                        existing_count = items[item_text][1]
                         count_duplicate += 1
-                    items[note_name] = [item_text, item_count + existing_count, item_type]
+                    items[item_text] = [item_text, item_count + existing_count, item_type]
                     
                 # Apparel, aid, food/drink, mods, notes, misc, junk, ammo...
                 else:
@@ -1790,14 +1788,18 @@ def main():
         empty_pref = "00000000"
         for row in range(int(df_selected.size / 2)):
             df_selected.values[row][1] = str.lower(df_selected.values[row][1])
+            df_selected.values[row][1] = str.replace(df_selected.values[row][1], 'plan:', '', 1).strip()
+            df_selected.values[row][1] = str.replace(df_selected.values[row][1], 'recipe:', '', 1).strip()
             if(len(str(df_selected.values[row][0])) < 8):
                 df_selected.values[row][0] = str(empty_pref + str(df_selected.values[row][0]))[-8:]
         
         for plan in pricecheck_plans:
             plan_l = str.lower(plan)
             for row in range(int(df_selected.size / 2)):
-                if(plan_l == df_selected.values[row][1]):
+                index =  str.find(plan_l, df_selected.values[row][1])
+                if(index != -1 and (index + len(df_selected.values[row][1])) == len(plan_l)):
                     pricecheck_plans[plan].append(df_selected.values[row][0])
+                    break
         
         conn = aiohttp.TCPConnector(limit_per_host=100, limit=0, ttl_dns_cache=300)
         async def gather_with_concurrency(n):
