@@ -1433,7 +1433,7 @@ def main():
     parser = argparse.ArgumentParser(
         prog='InventOMatic-Parser',
         description='Script for parsing inventory dump from invent-o-matic stash for Fallout 76',
-        epilog='Version 1.2, Written by Zelia')
+        epilog='Version 1.2.1, Written by Zelia')
     parser.add_argument('-f', metavar='filename', type=str, required=True,
                         help='Path to inventory dump file')
     parser.add_argument('-s', metavar='separator', type=str, default='\t',
@@ -1459,14 +1459,14 @@ def main():
     with open(filename) as json_data:
         data = json.load(json_data)
 
-    plan_db_cached = -1
+    account_name = ''
     count_armor = 0
     count_weapon = 0
     count_plan = 0
     count_other = 0
     count_duplicate = 0
     count_duplicate_pc = 0
-    count_duplicate_plan_pc = 0
+    count_plan_pc = 0
     item_text = ''
     item_type = ''
     item_desc = ''
@@ -1476,6 +1476,7 @@ def main():
     item_effects = ['', '', '']
     item_name_short = ''
     items = {}
+    plan_db_cached = -1
     pricecheck_urls = {}
     pricecheck_plans = {}
 
@@ -1706,10 +1707,7 @@ def main():
                 # PLANS/RECIPES
                 elif item_type == 'note':
                     count_plan += 1
-                    index = str.find(item_text, 'Plan')
-                    if index == -1:
-                        index = str.find(item_text, 'Recipe')
-                    if (is_pricecheck and item['isTradable'] and index != -1):
+                    if (is_pricecheck and item['isTradable']):
                         if item_text in pricecheck_plans:
                             existing_count = pricecheck_plans[item_text][1]
                             count_duplicate += 1
@@ -1725,14 +1723,18 @@ def main():
                     if item_text in items:
                         existing_count = items[item_text][1]
                         count_duplicate += 1
-                    items[item_text] = [item_text, item_count + existing_count, item_type]
+                    items[item_text] = [item_text, item_count + existing_count, item_type,
+                                        '', '', '', '', '', '', '', '', '',
+                                        account_name, character_name, item_sources[item_source]]
                     
                 # Apparel, aid, food/drink, mods, notes, misc, junk, ammo...
                 else:
                     count_other += 1
                     if item_text in items:
                         existing_count = items[item_text][1]
-                    items[item_text] = [item_text, item_count + existing_count, item_type]
+                    items[item_text] = [item_text, item_count + existing_count, item_type,
+                                        '', '', '', '', '', '', '', '', '',
+                                        account_name, character_name, item_sources[item_source]]
 
     parse_time = time.time()
 
@@ -1799,6 +1801,7 @@ def main():
                 index =  str.find(plan_l, df_selected.values[row][1])
                 if(index != -1 and (index + len(df_selected.values[row][1])) == len(plan_l)):
                     pricecheck_plans[plan].append(df_selected.values[row][0])
+                    count_plan_pc += 1
                     break
         
         conn = aiohttp.TCPConnector(limit_per_host=100, limit=0, ttl_dns_cache=300)
@@ -1838,10 +1841,9 @@ def main():
 
     print()
     if is_pricecheck:
-        print('Prices checked: %s legendary, %s plans (%s duplicates)' % (len(pricecheck_urls), len(pricecheck_plans),
-                                                                            count_duplicate_pc + count_duplicate_plan_pc))
+        print('Prices checked: %s legendary, %s plans (%s duplicates)' % (len(pricecheck_urls), count_plan_pc, count_duplicate_pc))
         print('Plan database fetched in %s seconds %s' % (f'{fetch_plan_database_time - legendary_pricecheck_time:.4g}',
-                                                          "(cached %s minutes ago)" % plan_db_cached if plan_db_cached > 0 else '(url fetch)'))
+                                                          "(cached %s min ago)" % plan_db_cached if plan_db_cached > 0 else '(url fetch)'))
         print('Price check legendary done in %s seconds' % (f'{legendary_pricecheck_time - parse_time:.4g}'))
         print('Price check plan/recipe done in %s seconds' % (f'{plan_pricecheck_time - fetch_plan_database_time:.4g}'))
 
