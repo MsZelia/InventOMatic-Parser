@@ -832,7 +832,7 @@ armor_descriptions = [
         "auto": "automatically use a stimpak",
         "bol": "grants up to +35 energy resistance and damage resistance, the lower",
         "cham": "become invisible while sneaking and not moving",
-        "cloak": "being hit in melee generates a stealth field",
+        "cloak": "being hit in melee",
         "ext": "15% damage from mirelurks and insects",
         "gs": "15% damage from ghouls",
         "h": "15% damage from animals",
@@ -1433,7 +1433,7 @@ def main():
     parser = argparse.ArgumentParser(
         prog='InventOMatic-Parser',
         description='Script for parsing inventory dump from invent-o-matic stash for Fallout 76',
-        epilog='Version 1.2.1, Written by Zelia')
+        epilog='Version 1.2.2, Written by Zelia')
     parser.add_argument('-f', metavar='filename', type=str, required=True,
                         help='Path to inventory dump file')
     parser.add_argument('-s', metavar='separator', type=str, default='\t',
