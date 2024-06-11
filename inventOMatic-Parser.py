@@ -5,200 +5,52 @@ import time
 import argparse
 import numbers
 from os.path import exists, getmtime
+from itertools import chain
 import pandas as pd
 
 start_time = time.time()
 
-item_sources = {
-    "playerInventory": "inv",
-    "stashInventory": "sta"
-}
-
-weapon_prefixes_to_remove = {
-    # paints - TODO add missing ones
-    11: "Armor Ace ",
-    12: "Blackbird ",
-    13: "Blue Camouflage ",
-    14: "Copperhead ",
-    15: "Dastardly Duo ",
-    16: "Ghillie ",
-    17: "Gunmetal ",
-    18: "Hot Rod ",
-    19: "Hot Rod Flames ",
-    20: "Intergalactic ",
-    21: "Inventor ",
-    22: "Light Em Up ",
-    23: "Lucille's Lullaby ",
-    24: "M.I.N.D. ",
-    25: "Matte Black ",
-    26: "Nuka-Cola Classic ",
-    27: "Nuka-Twist ",
-    28: "Poker ",
-    29: "Presidential ",
-    30: "Red Viper ",
-    31: "Rusted ",
-    32: "Screaming Eagle Wood ",
-    33: "Showstopper ",
-    34: "Silver Shroud ",
-    35: "Starlet Sniper ",
-    36: "Tricentennial ",
-    37: "Tropic Lightning ",
-    38: "Valorous Alistair ",
-    39: "Vault-Tec ",
-    40: "All Star ",
-    41: "Flames ",
-
-    # Weapon mods - TODO add missing ones
-    70: "Targeting ",
-    71: "Tactical ",
-    72: "Suppressed ",
-    73: "Snubnosed ",
-    74: "Sighted ",
-    75: "Short ",
-    76: "Sharpshooter's ",
-    77: "Scoped ",
-    78: "Focused ",
-    79: "Beta Wave ",
-    80: "Automatic ",
-    81: "Bayoneted ",
-    82: "Puncturing ",
-    83: "Large ",
-    84: "Electrified ",
-    85: "Cursed ",
-    86: "Bladed ",
-    87: "Barbed ",
-    88: "Recoil Compensated ",
-    89: "Hardened ",
-    90: "High Capacity ",
-    91: "High Speed ",
-    92: "Night-Vision ",
-    93: "Marksman's ",
-    94: "Prime ",
-    95: "Compensated ",
-    96: "Recon ",
-    97: "Long ",
-    98: "Charging ",
-    99: "Scattered ",
-    100: "Maximum Capacity "
-}
-
-armor_prefixes_to_remove = {
-    # paints ?
-
-    # Leather
-    55: "Boiled ",
-    56: "Shadowed ",
-    57: "Girded ",
-    58: "Treated ",
-    59: "Studded ",
-    # Raider
-    60: "Welded ",
-    61: "Tempered ",
-    62: "Hardened ",
-    63: "Buttressed ",
-    # Combat
-    64: "Reinforced ",
-    65: "Fiberglass ",
-    66: "Polymer ",
-    67: "BOS ",
-    # Metal/Robot
-    68: "Painted ",
-    69: "Enameled ",
-    70: "Alloyed ",
-    71: "Polished ",
-    # Marine
-    72: "Assault ",
-    # Wood
-    73: "Shrouded ",
-
-    # Misc mods
-    74: "Dense ",
-    75: "Asbestos Lined ",
-    76: "Strengthened ",
-    77: "Pocketed ",
-    78: "Deep Pocketed ",
-    79: "Muffled ",
-    80: "Cushioned ",
-    81: "Custom Fit ",
-    82: "Ultra-Light ",
-    83: "Jet Pack "
-
-}
-
-armor_types = {
-    "Raider Power": "Raider Power",
-    #
-    "Arctic Marine": "Arctic Marine",
-    "Brotherhood": "Brotherhood",
-    "Botsmith": "Botsmith",
-    "Civil Engineer": "Civil Engineer",
-    "Combat": "Combat",
-    "Covert Scout": "Scout Covert",
-    "Forest Scout": "Scout Forest",
-    "Leather": "Leather",
-    "Marine": "Marine",
-    "Metal": "Metal",
-    "Raider": "Raider",
-    "Robot": "Robot",
-    "Secret Service": "Secret Service",
-    "Solar": "Solar",
-    "Thorn": "Thorn",
-    "Trapper": "Trapper",
-    "Urban Scout": "Scout Urban",
-    "Wood": "Wood",
-    # Power Armor
-    "Excavator": "Excavator",
-    "Hellcat": "Hellcat",
-    "Strangler Heart": "Strangler Heart",
-    "T-45": "T-45",
-    "T-51b": "T-51b",
-    "T-60": "T-60",
-    "T-65": "T-65",
-    "Ultracite": "Ultracite",
-    "Union": "Union",
-    "X-01": "X-01"
-}
 
 graded_armor = {
-    "Combat": {
+    "COMBAT": {
         "CHEST": {
-            "Default": {
+            "DEFAULT": {
                 "50": {
-                    "36/36/0": "Light",
-                    "47/47/0": "Sturdy",
-                    "61/61/0": "Heavy"},
+                    "36/36/0": "LIGHT",
+                    "47/47/0": "STURDY",
+                    "61/61/0": "HEAVY"},
                 "40": {
-                    "30/30/0": "Light",
-                    "40/40/0": "Sturdy",
-                    "52/52/0": "Heavy"},
+                    "30/30/0": "LIGHT",
+                    "40/40/0": "STURDY",
+                    "52/52/0": "HEAVY"},
                 "30": {
-                    "25/25/0": "Light",
-                    "33/33/0": "Sturdy",
-                    "43/43/0": "Heavy"},
+                    "25/25/0": "LIGHT",
+                    "33/33/0": "STURDY",
+                    "43/43/0": "HEAVY"},
                 "20": {
-                    "16/16/0": "Light",
-                    "21/21/0": "Sturdy",
-                    "27/27/0": "Heavy"}
+                    "16/16/0": "LIGHT",
+                    "21/21/0": "STURDY",
+                    "27/27/0": "HEAVY"}
                 },
-            "Reinforced":{
+            "REINFORCED":{
                 "50":[10,10,0],
                 "40":[8,8,0],
                 "30":[6,6,0],
                 "20":[4,4,0]
                 },
-            "Shadowed":{
+            "SHADOWED":{
                 "50":[10,10,0],
                 "40":[8,8,0],
                 "30":[6,6,0],
                 "20":[4,4,0]
                 },
-            "Fiberglass":{
+            "FIBERGLASS":{
                 "50":[15,15,0],
                 "40":[12,12,0],
                 "30":[9,9,0],
                 "20":[7,7,0]
                 },
-            "Polymer":{
+            "POLYMER":{
                 "50":[20,20,0],
                 "40":[16,16,0],
                 "30":[13,13,0],
@@ -212,43 +64,43 @@ graded_armor = {
                 }
             },
         "LIMB": {
-            "Default": {
+            "DEFAULT": {
                 "50": {
-                    "12/12/0": "Light",
-                    "15/15/0": "Sturdy",
-                    "20/20/0": "Heavy"},
+                    "12/12/0": "LIGHT",
+                    "15/15/0": "STURDY",
+                    "20/20/0": "HEAVY"},
                 "40": {
-                    "10/10/0": "Light",
-                    "13/13/0": "Sturdy",
-                    "17/17/0": "Heavy"},
+                    "10/10/0": "LIGHT",
+                    "13/13/0": "STURDY",
+                    "17/17/0": "HEAVY"},
                 "30": {
-                    "8/8/0": "Light",
-                    "11/11/0": "Sturdy",
-                    "14/14/0": "Heavy"},
+                    "8/8/0": "LIGHT",
+                    "11/11/0": "STURDY",
+                    "14/14/0": "HEAVY"},
                 "20": {
-                    "6/6/0": "Light",
-                    "8/8/0": "Sturdy",
-                    "11/11/0": "Heavy"}
+                    "6/6/0": "LIGHT",
+                    "8/8/0": "STURDY",
+                    "11/11/0": "HEAVY"}
                 },
-            "Reinforced":{
+            "REINFORCED":{
                 "50":[7,7,0],
                 "40":[5,5,0],
                 "30":[4,4,0],
                 "20":[3,3,0]
                 },
-            "Shadowed":{
+            "SHADOWED":{
                 "50":[7,7,0],
                 "40":[5,5,0],
                 "30":[4,4,0],
                 "20":[3,3,0]
                 },
-            "Fiberglass":{
+            "FIBERGLASS":{
                 "50":[10,10,0],
                 "40":[8,8,0],
                 "30":[6,6,0],
                 "20":[5,5,0]
                 },
-            "Polymer":{
+            "POLYMER":{
                 "50":[13,13,0],
                 "40":[10,10,0],
                 "30":[8,8,0],
@@ -262,39 +114,39 @@ graded_armor = {
                 }
             }
     },
-    "Leather": {
+    "LEATHER": {
         "CHEST": {
-            "Default": {
+            "DEFAULT": {
                 "50": {
-                    "16/45/0": "Light",
-                    "21/59/0": "Sturdy",
-                    "28/76/0": "Heavy"},
+                    "16/45/0": "LIGHT",
+                    "21/59/0": "STURDY",
+                    "28/76/0": "HEAVY"},
                 "40": {
-                    "14/40/0": "Light",
-                    "18/52/0": "Sturdy",
-                    "24/67/0": "Heavy"},
+                    "14/40/0": "LIGHT",
+                    "18/52/0": "STURDY",
+                    "24/67/0": "HEAVY"},
                 "30": {
-                    "12/35/0": "Light",
-                    "16/45/0": "Sturdy",
-                    "21/58/0": "Heavy"},
+                    "12/35/0": "LIGHT",
+                    "16/45/0": "STURDY",
+                    "21/58/0": "HEAVY"},
                 "20": {
-                    "10/30/0": "Light",
-                    "13/39/0": "Sturdy",
-                    "17/50/0": "Heavy"},
+                    "10/30/0": "LIGHT",
+                    "13/39/0": "STURDY",
+                    "17/50/0": "HEAVY"},
                 "10": {
-                    "8/25/0": "Light",
-                    "11/32/0": "Sturdy",
-                    "15/41/0": "Heavy"},
+                    "8/25/0": "LIGHT",
+                    "11/32/0": "STURDY",
+                    "15/41/0": "HEAVY"},
                 "5": {
-                    "6/15/0": "Light",
-                    "8/20/0": "Sturdy",
-                    "11/26/0": "Heavy"},
+                    "6/15/0": "LIGHT",
+                    "8/20/0": "STURDY",
+                    "11/26/0": "HEAVY"},
                 "1": {
-                    "4/10/0": "Light",
-                    "5/13/0": "Sturdy",
-                    "7/17/0": "Heavy"},
+                    "4/10/0": "LIGHT",
+                    "5/13/0": "STURDY",
+                    "7/17/0": "HEAVY"},
                 },
-            "Boiled":{
+            "BOILED":{
                 "50":[5,15,0],
                 "40":[4,12,0],
                 "30":[3,9,0],
@@ -302,7 +154,7 @@ graded_armor = {
                 "10":[1,3,0],
                 "5":[1,2,0],
                 "1":[1,1,0]},
-            "Shadowed":{
+            "SHADOWED":{
                 "50":[5,15,0],
                 "40":[4,12,0],
                 "30":[3,9,0],
@@ -310,7 +162,7 @@ graded_armor = {
                 "10":[1,3,0],
                 "5":[1,2,0],
                 "1":[1,1,0]},
-            "Girded":{
+            "GIRDED":{
                 "50":[10,20,0],
                 "40":[8,16,0],
                 "30":[6,12,0],
@@ -318,7 +170,7 @@ graded_armor = {
                 "10":[2,5,0],
                 "5":[1,3,0],
                 "1":[1,2,0]},
-            "Treated":{
+            "TREATED":{
                 "50":[15,25,0],
                 "40":[12,20,0],
                 "30":[9,16,0],
@@ -326,7 +178,7 @@ graded_armor = {
                 "10":[3,7,0],
                 "5":[2,4,0],
                 "1":[1,3,0]},
-            "Studded":{
+            "STUDDED":{
                 "50":[20,30,0],
                 "40":[16,24,0],
                 "30":[12,19,0],
@@ -336,37 +188,37 @@ graded_armor = {
                 "1":[1,4,0]}
             },
         "LIMB": {
-            "Default": {
+            "DEFAULT": {
                 "50": {
-                    "11/21/0": "Light",
-                    "17/36/0": "Sturdy",
-                    "22/47/0": "Heavy"},
+                    "11/21/0": "LIGHT",
+                    "17/36/0": "STURDY",
+                    "22/47/0": "HEAVY"},
                 "40": {
-                    "9/17/0": "Light",
-                    "14/30/0": "Sturdy",
-                    "19/39/0": "Heavy"},
+                    "9/17/0": "LIGHT",
+                    "14/30/0": "STURDY",
+                    "19/39/0": "HEAVY"},
                 "30": {
-                    "7/13/0": "Light",
-                    "11/24/0": "Sturdy",
-                    "15/31/0": "Heavy"},
+                    "7/13/0": "LIGHT",
+                    "11/24/0": "STURDY",
+                    "15/31/0": "HEAVY"},
                 "20": {
-                    "5/9/0": "Light",
-                    "8/17/0": "Sturdy",
-                    "11/22/0": "Heavy"},
+                    "5/9/0": "LIGHT",
+                    "8/17/0": "STURDY",
+                    "11/22/0": "HEAVY"},
                 "10": {
-                    "3/5/0": "Light",
-                    "5/11/0": "Sturdy",
-                    "7/14/0": "Heavy"},
+                    "3/5/0": "LIGHT",
+                    "5/11/0": "STURDY",
+                    "7/14/0": "HEAVY"},
                 "5": {
-                    "2/4/0": "Light",
-                    "3/7/0": "Sturdy",
-                    "4/9/0": "Heavy"},
+                    "2/4/0": "LIGHT",
+                    "3/7/0": "STURDY",
+                    "4/9/0": "HEAVY"},
                 "1": {
-                    "1/2/0": "Light",
-                    "2/4/0": "Sturdy",
-                    "3/6/0": "Heavy"},
+                    "1/2/0": "LIGHT",
+                    "2/4/0": "STURDY",
+                    "3/6/0": "HEAVY"},
                 },
-            "Boiled":{
+            "BOILED":{
                 "50":[1,10,0],
                 "40":[1,8,0],
                 "30":[1,6,0],
@@ -374,7 +226,7 @@ graded_armor = {
                 "10":[1,2,0],
                 "5":[1,1,0],
                 "1":[1,1,0]},
-            "Shadowed":{
+            "SHADOWED":{
                 "50":[1,10,0],
                 "40":[1,8,0],
                 "30":[1,6,0],
@@ -382,7 +234,7 @@ graded_armor = {
                 "10":[1,2,0],
                 "5":[1,1,0],
                 "1":[1,1,0]},
-            "Girded":{
+            "GIRDED":{
                 "50":[5,13,0],
                 "40":[4,10,0],
                 "30":[3,8,0],
@@ -390,7 +242,7 @@ graded_armor = {
                 "10":[1,4,0],
                 "5":[1,2,0],
                 "1":[1,2,0]},
-            "Treated":{
+            "TREATED":{
                 "50":[8,16,0],
                 "40":[6,13,0],
                 "30":[5,10,0],
@@ -398,7 +250,7 @@ graded_armor = {
                 "10":[2,5,0],
                 "5":[1,4,0],
                 "1":[1,3,0]},
-            "Studded":{
+            "STUDDED":{
                 "50":[10,30,0],
                 "40":[8,24,0],
                 "30":[6,19,0],
@@ -408,59 +260,59 @@ graded_armor = {
                 "1":[1,4,0]}
             }
     },
-    "Metal": {
+    "METAL": {
         "CHEST": {
-            "Default": {
+            "DEFAULT": {
                 "50": {
-                    "51/11/0": "Light",
-                    "67/13/0": "Sturdy",
-                    "87/14/0": "Heavy"},
+                    "51/11/0": "LIGHT",
+                    "67/13/0": "STURDY",
+                    "87/14/0": "HEAVY"},
                 "40": {
-                    "42/9/0": "Light",
-                    "55/11/0": "Sturdy",
-                    "72/12/0": "Heavy"},
+                    "42/9/0": "LIGHT",
+                    "55/11/0": "STURDY",
+                    "72/12/0": "HEAVY"},
                 "30": {
-                    "33/7/0": "Light",
-                    "43/9/0": "Sturdy",
-                    "56/10/0": "Heavy"},
+                    "33/7/0": "LIGHT",
+                    "43/9/0": "STURDY",
+                    "56/10/0": "HEAVY"},
                 "20": {
-                    "24/5/0": "Light",
-                    "32/7/0": "Sturdy",
-                    "42/7/0": "Heavy"},
+                    "24/5/0": "LIGHT",
+                    "32/7/0": "STURDY",
+                    "42/7/0": "HEAVY"},
                 "10": {
-                    "20/3/0": "Light",
-                    "26/4/0": "Sturdy",
-                    "34/4/0": "Heavy"}
+                    "20/3/0": "LIGHT",
+                    "26/4/0": "STURDY",
+                    "34/4/0": "HEAVY"}
             },
-            "Painted":{
+            "PAINTED":{
                 "50":[15,3,0],
                 "40":[12,2,0],
                 "30":[10,2,0],
                 "20":[8,1,0],
                 "10":[6,1,0]
             },
-            "Enameled":{
+            "ENAMELED":{
                 "50":[20,4,0],
                 "40":[17,3,0],
                 "30":[14,2,0],
                 "20":[11,2,0],
                 "10":[8,1,0]
             },
-            "Shadowed":{
+            "SHADOWED":{
                 "50":[15,3,0],
                 "40":[12,2,0],
                 "30":[10,2,0],
                 "20":[8,1,0],
                 "10":[6,1,0]
             },
-            "Alloyed":{
+            "ALLOYED":{
                 "50":[25,20,0],
                 "40":[21,16,0],
                 "30":[17,13,0],
                 "20":[13,9,0],
                 "10":[10,6,0]
             },
-            "Polished":{
+            "POLISHED":{
                 "50":[30,6,0],
                 "40":[25,5,0],
                 "30":[21,4,0],
@@ -469,57 +321,57 @@ graded_armor = {
             },
 		},
         "LIMB": {
-            "Default": {
+            "DEFAULT": {
                 "50": {
-                    "20/5/0": "Light",
-                    "26/6/0": "Sturdy",
-                    "34/8/0": "Heavy"},
+                    "20/5/0": "LIGHT",
+                    "26/6/0": "STURDY",
+                    "34/8/0": "HEAVY"},
                 "40": {
-                    "18/4/0": "Light",
-                    "24/5/0": "Sturdy",
-                    "32/7/0": "Heavy"},
+                    "18/4/0": "LIGHT",
+                    "24/5/0": "STURDY",
+                    "32/7/0": "HEAVY"},
                 "30": {
-                    "16/3/0": "Light",
-                    "21/4/0": "Sturdy",
-                    "27/6/0": "Heavy"},
+                    "16/3/0": "LIGHT",
+                    "21/4/0": "STURDY",
+                    "27/6/0": "HEAVY"},
                 "20": {
-                    "12/2/0": "Light",
-                    "16/3/0": "Sturdy",
-                    "20/4/0": "Heavy"},
+                    "12/2/0": "LIGHT",
+                    "16/3/0": "STURDY",
+                    "20/4/0": "HEAVY"},
                 "10": {
-                    "8/1/0": "Light",
-                    "11/2/0": "Sturdy",
-                    "14/3/0": "Heavy"}
+                    "8/1/0": "LIGHT",
+                    "11/2/0": "STURDY",
+                    "14/3/0": "HEAVY"}
                 },
-            "Painted":{
+            "PAINTED":{
                 "50":[10,1,0],
                 "40":[8,1,0],
                 "30":[6,1,0],
                 "20":[5,1,0],
                 "10":[3,1,0]
             },
-            "Enameled":{
+            "ENAMELED":{
                 "50":[13,2,0],
                 "40":[10,1,0],
                 "30":[8,1,0],
                 "20":[6,1,0],
                 "10":[4,1,0]
             },
-            "Shadowed":{
+            "SHADOWED":{
                 "50":[10,1,0],
                 "40":[8,1,0],
                 "30":[6,1,0],
                 "20":[5,1,0],
                 "10":[3,1,0]
             },
-            "Alloyed":{
+            "ALLOYED":{
                 "50":[15,3,0],
                 "40":[12,2,0],
                 "30":[10,2,0],
                 "20":[8,1,0],
                 "10":[6,1,0]
             },
-            "Polished":{
+            "POLISHED":{
                 "50":[20,4,0],
                 "40":[16,3,0],
                 "30":[13,2,0],
@@ -528,52 +380,52 @@ graded_armor = {
             }
 		}
 	},
-    "Raider": {
+    "RAIDER": {
         "CHEST": {
-            "Default": {
+            "DEFAULT": {
                 "45": {
-                    "42/15/0": "Light",
-                    "54/19/0": "Sturdy",
-                    "70/24/0": "Heavy"},
+                    "42/15/0": "LIGHT",
+                    "54/19/0": "STURDY",
+                    "70/24/0": "HEAVY"},
                 "35": {
-                    "34/12/0": "Light",
-                    "44/15/0": "Sturdy",
-                    "57/19/0": "Heavy"},
+                    "34/12/0": "LIGHT",
+                    "44/15/0": "STURDY",
+                    "57/19/0": "HEAVY"},
                 "25": {
-                    "26/9/0": "Light",
-                    "34/11/0": "Sturdy",
-                    "44/14/0": "Heavy"},
+                    "26/9/0": "LIGHT",
+                    "34/11/0": "STURDY",
+                    "44/14/0": "HEAVY"},
                 "15": {
-                    "18/6/0": "Light",
-                    "24/8/0": "Sturdy",
-                    "32/11/0": "Heavy"},
+                    "18/6/0": "LIGHT",
+                    "24/8/0": "STURDY",
+                    "32/11/0": "HEAVY"},
                 "5": {
-                    "10/4/0": "Light",
-                    "13/6/0": "Sturdy",
-                    "17/8/0": "Heavy"},
+                    "10/4/0": "LIGHT",
+                    "13/6/0": "STURDY",
+                    "17/8/0": "HEAVY"},
                 },
-            "Welded":{
+            "WELDED":{
                 "45":[11,5,0],
                 "35":[9,4,0],
                 "25":[7,3,0],
                 "15":[5,2,0],
                 "5":[3,1,0]
 			},
-            "Tempered":{
+            "TEMPERED":{
                 "45":[14,13,0],
                 "35":[12,11,0],
                 "25":[9,8,0],
                 "15":[7,5,0],
                 "5":[4,3,0]
 			},
-            "Hardened":{
+            "HARDENED":{
                 "45":[18,9,0],
                 "35":[15,7,0],
                 "25":[12,6,0],
                 "15":[9,5,0],
                 "5":[6,3,0]
 			},
-            "Buttressed":{
+            "BUTTRESSED":{
                 "45":[23,11,0],
                 "35":[19,9,0],
                 "25":[15,7,0],
@@ -582,50 +434,50 @@ graded_armor = {
 			}
 		},
         "LIMB": {
-            "Default": {
+            "DEFAULT": {
                 "45": {
-                    "17/8/0": "Light",
-                    "22/10/0": "Sturdy",
-                    "28/13/0": "Heavy"},
+                    "17/8/0": "LIGHT",
+                    "22/10/0": "STURDY",
+                    "28/13/0": "HEAVY"},
                 "35": {
-                    "14/7/0": "Light",
-                    "18/9/0": "Sturdy",
-                    "23/11/0": "Heavy"},
+                    "14/7/0": "LIGHT",
+                    "18/9/0": "STURDY",
+                    "23/11/0": "HEAVY"},
                 "25": {
-                    "11/4/0": "Light",
-                    "14/6/0": "Sturdy",
-                    "18/8/0": "Heavy"},
+                    "11/4/0": "LIGHT",
+                    "14/6/0": "STURDY",
+                    "18/8/0": "HEAVY"},
                 "15": {
-                    "8/3/0": "Light",
-                    "10/5/0": "Sturdy",
-                    "13/6/0": "Heavy"},
+                    "8/3/0": "LIGHT",
+                    "10/5/0": "STURDY",
+                    "13/6/0": "HEAVY"},
                 "5": {
-                    "5/2/0": "Light",
-                    "7/3/0": "Sturdy",
-                    "9/4/0": "Heavy"},
+                    "5/2/0": "LIGHT",
+                    "7/3/0": "STURDY",
+                    "9/4/0": "HEAVY"},
                 },
-            "Welded":{
+            "WELDED":{
                 "45":[9,4,0],
                 "35":[7,3,0],
                 "25":[5,2,0],
                 "15":[3,2,0],
                 "5":[1,1,0]
 			},
-            "Tempered":{
+            "TEMPERED":{
                 "45":[10,5,0],
                 "35":[8,4,0],
                 "25":[6,3,0],
                 "15":[4,3,0],
                 "5":[2,2,0]
 			},
-            "Hardened":{
+            "HARDENED":{
                 "45":[11,6,0],
                 "35":[9,5,0],
                 "25":[7,4,0],
                 "15":[5,4,0],
                 "5":[3,3,0]
 			},
-            "Buttressed":{
+            "BUTTRESSED":{
                 "45":[12,7,0],
                 "35":[10,6,0],
                 "25":[8,5,0],
@@ -634,59 +486,59 @@ graded_armor = {
 			}
 		}
 	},
-    "Robot": {
+    "ROBOT": {
         "CHEST": {
-            "Default": {
+            "DEFAULT": {
                 "50": {
-                    "24/24/13": "Light",
-                    "32/32/15": "Sturdy",
-                    "42/42/15": "Heavy"},
+                    "24/24/13": "LIGHT",
+                    "32/32/15": "STURDY",
+                    "42/42/15": "HEAVY"},
                 "40": {
-                    "20/20/11": "Light",
-                    "26/26/13": "Sturdy",
-                    "34/34/13": "Heavy"},
+                    "20/20/11": "LIGHT",
+                    "26/26/13": "STURDY",
+                    "34/34/13": "HEAVY"},
                 "30": {
-                    "16/16/9": "Light",
-                    "21/21/11": "Sturdy",
-                    "27/27/11": "Heavy"},
+                    "16/16/9": "LIGHT",
+                    "21/21/11": "STURDY",
+                    "27/27/11": "HEAVY"},
                 "20": {
-                    "12/12/7": "Light",
-                    "16/16/9": "Sturdy",
-                    "20/20/9": "Heavy"},
+                    "12/12/7": "LIGHT",
+                    "16/16/9": "STURDY",
+                    "20/20/9": "HEAVY"},
                 "10": {
-                    "8/8/5": "Light",
-                    "11/11/7": "Sturdy",
-                    "14/14/7": "Heavy"}
+                    "8/8/5": "LIGHT",
+                    "11/11/7": "STURDY",
+                    "14/14/7": "HEAVY"}
                 },
-            "Painted":{
+            "PAINTED":{
                 "50":[13,6,0],
                 "40":[10,4,0],
                 "30":[8,3,0],
                 "20":[6,2,0],
                 "10":[4,1,0]
             },
-            "Shadowed":{
+            "SHADOWED":{
                 "50":[10,10,5],
                 "40":[8,8,4],
                 "30":[6,6,3],
                 "20":[4,4,2],
                 "10":[2,2,1]
             },
-            "Enameled":{
+            "ENAMELED":{
                 "50":[12,12,6],
                 "40":[9,9,4],
                 "30":[7,7,3],
                 "20":[5,5,2],
                 "10":[3,3,1]
             },
-            "Alloyed":{
+            "ALLOYED":{
                 "50":[13,13,7],
                 "40":[10,10,5],
                 "30":[8,8,4],
                 "20":[6,6,3],
                 "10":[4,4,2]
             },
-            "Polished":{
+            "POLISHED":{
                 "50":[14,14,8],
                 "40":[11,11,6],
                 "30":[9,9,5],
@@ -695,57 +547,57 @@ graded_armor = {
             }
 		},
         "ARM": {
-            "Default": {
+            "DEFAULT": {
                 "50": {
-                    "10/10/10": "Light",
-                    "13/10/13": "Sturdy",
-                    "17/17/15": "Heavy"},
+                    "10/10/10": "LIGHT",
+                    "13/10/13": "STURDY",
+                    "17/17/15": "HEAVY"},
                 "40": {
-                    "9/9/9": "Light",
-                    "12/9/12": "Sturdy",
-                    "15/15/13": "Heavy"},
+                    "9/9/9": "LIGHT",
+                    "12/9/12": "STURDY",
+                    "15/15/13": "HEAVY"},
                 "30": {
-                    "7/7/7": "Light",
-                    "9/6/9": "Sturdy",
-                    "12/12/11": "Heavy"},
+                    "7/7/7": "LIGHT",
+                    "9/6/9": "STURDY",
+                    "12/12/11": "HEAVY"},
                 "20": {
-                    "5/5/5": "Light",
-                    "7/5/7": "Sturdy",
-                    "9/9/9": "Heavy"},
+                    "5/5/5": "LIGHT",
+                    "7/5/7": "STURDY",
+                    "9/9/9": "HEAVY"},
                 "10": {
-                    "3/3/3": "Light",
-                    "5/3/5": "Sturdy",
-                    "7/7/7": "Heavy"}
+                    "3/3/3": "LIGHT",
+                    "5/3/5": "STURDY",
+                    "7/7/7": "HEAVY"}
                 },
-            "Painted":{
+            "PAINTED":{
                 "50":[10,10,5],
                 "40":[8,8,4],
                 "30":[6,6,3],
                 "20":[4,4,2],
                 "10":[2,2,1]
 			},
-            "Shadowed":{
+            "SHADOWED":{
                 "50":[10,10,5],
                 "40":[8,8,4],
                 "30":[6,6,3],
                 "20":[4,4,2],
                 "10":[2,2,1]
 			},
-            "Enameled":{
+            "ENAMELED":{
                 "50":[12,12,6],
                 "40":[9,9,4],
                 "30":[7,7,3],
                 "20":[5,5,2],
                 "10":[3,3,1]
 			},
-            "Alloyed":{
+            "ALLOYED":{
                 "50":[13,13,7],
                 "40":[10,10,5],
                 "30":[8,8,4],
                 "20":[6,6,3],
                 "10":[4,4,2]
 			},
-            "Polished":{
+            "POLISHED":{
                 "50":[14,14,8],
                 "40":[11,11,6],
                 "30":[9,9,5],
@@ -754,57 +606,57 @@ graded_armor = {
 			}
 		},
         "LEG": {
-            "Default": {
+            "DEFAULT": {
                 "50": {
-                    "10/10/10": "Light",
-                    "13/13/13": "Sturdy",
-                    "17/17/15": "Heavy"},
+                    "10/10/10": "LIGHT",
+                    "13/13/13": "STURDY",
+                    "17/17/15": "HEAVY"},
                 "40": {
-                    "9/9/9": "Light",
-                    "12/12/12": "Sturdy",
-                    "15/15/13": "Heavy"},
+                    "9/9/9": "LIGHT",
+                    "12/12/12": "STURDY",
+                    "15/15/13": "HEAVY"},
                 "30": {
-                    "7/7/7": "Light",
-                    "9/9/9": "Sturdy",
-                    "12/12/11": "Heavy"},
+                    "7/7/7": "LIGHT",
+                    "9/9/9": "STURDY",
+                    "12/12/11": "HEAVY"},
                 "20": {
-                    "5/5/5": "Light",
-                    "7/7/7": "Sturdy",
-                    "9/9/9": "Heavy"},
+                    "5/5/5": "LIGHT",
+                    "7/7/7": "STURDY",
+                    "9/9/9": "HEAVY"},
                 "10": {
-                    "3/3/3": "Light",
-                    "5/5/5": "Sturdy",
-                    "7/7/7": "Heavy"}
+                    "3/3/3": "LIGHT",
+                    "5/5/5": "STURDY",
+                    "7/7/7": "HEAVY"}
                 },
-            "Painted":{
+            "PAINTED":{
                 "50":[10,10,5],
                 "40":[8,8,4],
                 "30":[6,6,3],
                 "20":[4,4,2],
                 "10":[2,2,1]
 			},
-            "Shadowed":{
+            "SHADOWED":{
                 "50":[10,10,5],
                 "40":[8,8,4],
                 "30":[6,6,3],
                 "20":[4,4,2],
                 "10":[2,2,1]
 			},
-            "Enameled":{
+            "ENAMELED":{
                 "50":[12,12,6],
                 "40":[9,9,4],
                 "30":[7,7,3],
                 "20":[5,5,2],
                 "10":[3,3,1]
 			},
-            "Alloyed":{
+            "ALLOYED":{
                 "50":[13,13,7],
                 "40":[10,10,5],
                 "30":[8,8,4],
                 "20":[6,6,3],
                 "10":[4,4,2]
 			},
-            "Polished":{
+            "POLISHED":{
                 "50":[14,14,8],
                 "40":[11,11,6],
                 "30":[9,9,5],
@@ -815,435 +667,209 @@ graded_armor = {
 	}
 }
 
-armor_pieces = {
-    "Left Arm": "LA",
-    "Left Leg": "LL",
-    "Right Arm": "RA",
-    "Right Leg": "RL",
-    "Chest Piece": "CH",
-    "Torso": "CH",
-    "Helmet": "HELM"
-}
-
-armor_descriptions = [
-    {
-        "ari": "grants up to +20 energy resistance and damage resistance, the higher",
-        "ass": "15% damage from humans",
-        "auto": "automatically use a stimpak",
-        "bol": "grants up to +35 energy resistance and damage resistance, the lower",
-        "cham": "become invisible while sneaking and not moving",
-        "cloak": "being hit in melee",
-        "ext": "15% damage from mirelurks and insects",
-        "gs": "15% damage from ghouls",
-        "h": "15% damage from animals",
-        "ls": "when incapacitated, gain a 50% chance to revive",
-        "ms": "15% damage from super mutants",
-        "mu": "10 damage resistance and energy resistance while mutated",
-        "n": "damage resistance and energy resistance at night",
-        "oe": "increases damage reduction up to +6%",
-        "r": "0.5% heal rate",
-        "tro": "15% damage from robots",
-        "u": "gain up to +3 to all",
-        "v": "grants up to +35 energy resistance and damage resistance, the higher",
-        "w": "90% weight",
-        "z": "15% damage from scorched"
-    },
-    {
-        "int": "1 intelligence",
-        "ap": "5% action point regen",
-        "str": "1 strength",
-        "hard": "receive 7% less explosion damage",
-        "25p": "25 poison resistance",
-        "25c": "25 cryo resistance",
-        "25f": "25 fire resistance",
-        "25r": "25 radiation resistance",
-        "luck": "1 luck",
-        "end": "1 endurance",
-        "per": "1 perception",
-        "agi": "1 agility",
-        "glut": "hunger and thirst grow 10% slower",
-        "cha": "1 charisma",
-        "25d": "25% reduced disease chance",
-    },
-    {
-        "wwr": "weapon weights reduced by 20%",
-        "sent": "75% chance to reduce damage by 15% while not moving",
-        "acrobat": "50% fall damage",
-        "cav": "75% chance to reduce damage by 15% while sprinting",
-        "sneak": "25% less noise while sneaking +25% reduce detection chance",
-        "fwr": "food, drink, and chem weights reduced by 20%",
-        "awr": "ammo weight reduced by 20%",
-        "jwr": "junk item weights reduced by 20%",
-        "dur": "50% slower",
-        "ldr": "receive 15% less limb damage",
-        "block": "15% damage taken while blocking",
-        "energy": "5% chance to deal 12 energy damage per second",
-        "fire": "5% chance to deal 12 fire damage per second",
-        "cryo": "5% chance to deal 12 cryo damage per second",
-        "poison": "5% chance to deal 12 poison damage per second",
-        "doc": "effectiveness of stimpaks, radaway, and rad-x",
-        "lock": "increases size of sweet-spot while picking locks",
-        "rad": "0.25% radiation damage recovery",
-        "aqua": "breathe underwater",
-        "titan": "reduces damage while standing and not moving",
-    }
-]
-
-weapon_descriptions = [
-    {
-        "aa": "50% armor penetration",
-        "ari": "50% damage based on caps",
-        "ass": "50% damage to humans",
-        "b": "95% as health decreases",
-        "ber": "50% as damage resistance decreases",
-        "exe": "50% more damage when your target is below 40% health",
-        "ext": "50% damage to insects",
-        "f": "damage after each consecutive hit",
-        "gou": "24% as you fill your hunger and thirst",
-        "gs": "50% damage to ghouls",
-        "h": "50% damage to animals",
-        "i": "100% damage against targets with full health",
-        "j": "damage increases per addiction",
-        "jug": "25% as health increases",
-        "med": "will heal you and your group",
-        "ms": "50% damage to super mutants",
-        "mu": "25% as you gain mutations",
-        "n": "50% damage at night",
-        "q": "300% ammo capacity",
-        "st": "100% v.a.t.s. accuracy at +50%",
-        "sup": "reduce your target's damage output",
-        "tro": "50% damage to robots",
-        "ts": "1 projectiles +25% damage",
-        "v": "restore 2% health over 2 seconds",
-        "z": "50% damage to scorched",
-    },
-    {
-        "e3": "bullets explode for 3%",
-        "e": "bullets explode for 20%",
-        "25": "25% weapon speed",
-        "50c": "50% critical damage",
-        "ss": "40% weapon speed",
-        "40p": "40% power attack damage",
-        "ap": "replenish 15 action points",
-        "25a": "25% damage while aiming",
-        "50l": "50% limb damage",
-        "50h": "50% chance to hit",
-        "bash": "50% bash damage",
-        "sent": "25% melee damage while not moving",
-        "block": "50% melee damage reflection while blocking",
-        "last": "the last round in a magazine",
-    },
-    {
-        "25": "25% action point cost",
-        "15r": "15% reload speed",
-        "15v": "15 bonus v.a.t.s. critical charge",
-        "90": "90% weight",
-        "dur": "50% slower",
-        "s": "1 strength",
-        "p": "1 perception",
-        "a": "1 agility",
-        "e": "1 endurance",
-        "stealth": "10% chance to generate a stealth field",
-        "40": "40% damage taken while power attacking",
-        "block": "15% damage taken while blocking",
-        "ms": "100% faster movement speed",
-        "50": "50 damage resistance while aiming",
-        "250": "250 damage resistance while reloading",
-    }
-]
-
-armor_effects = [
-    {
-        "ari": "Aristocrat's",
-        "ass": "Assassin's",
-        "auto": "Auto Stim",
-        "bol": "Bolstering",
-        "cham": "Chameleon",
-        "cloak": "Cloaking",
-        "ext": "Exterminator's",
-        "gs": "Ghoul Slayer's",
-        "h": "Hunter's",
-        "ls": "Life Saving",
-        "ms": "Mutant Slayer's",
-        "mu": "Mutant's",
-        "n": "Nocturnal",
-        "oe": "Overeater's",
-        "r": "Regenerating",
-        "tro": "Troubleshooter's",
-        "u": "Unyielding",
-        "v": "Vanguard's",
-        "w": "Weightless",
-        "z": "Zealot's"
-    },
-    {
-        "int": "Intelligence",
-        "ap": "Powered",
-        "str": "Strength",
-        "hard": "Hardy",
-        "25p": "Poisoner's",
-        "25c": "Warming",
-        "25f": "Fireproof",
-        "25r": "HazMat",
-        "luck": "Luck",
-        "end": "Endurance",
-        "per": "Perception",
-        "agi": "Agility",
-        "glut": "Glutton",
-        "cha": "Charisma",
-        "25d": "Antiseptic",
-    },
-    {
-        "wwr": "Reduced weapon weight",
-        "sent": "Sentinel's",
-        "acrobat": "Acrobat's",
-        "cav": "Cavalier's",
-        "sneak": "Improved sneaking",
-        "fwr": "Reduced food/drink/chem weight",
-        "awr": "Reduced ammo weight",
-        "jwr": "Reduced junk weight",
-        "dur": "Durability",
-        "ldr": "Reduced limn damage",
-        "block": "Defender's",
-        "energy": "Electrified",
-        "fire": "Burning",
-        "cryo": "Frozen",
-        "poison": "Toxic",
-        "doc": "Doctor's",
-        "lock": "Safecracker's",
-        "rad": "Dissipating",
-        "aqua": "Diver's",
-        "titan": "Titan's",
-    }
-]
-
-weapon_effects = [
-    {
-        "aa": "Anti-armor",
-        "ari": "Aristocrat's",
-        "ass": "Assassin's",
-        "b": "Bloodied",
-        "ber": "Berserker's",
-        "exe": "Executioner's",
-        "ext": "Exterminator's",
-        "f": "Furious",
-        "gou": "Ghoul Slayer's",
-        "gs": "Gourmand's",
-        "h": "Hunter's",
-        "i": "Instigating",
-        "jug": "Juggernaut's",
-        "j": "Junkie's",
-        "med": "Medic's",
-        "ms": "Mutant Slayer's",
-        "mu": "Mutant's",
-        "n": "Nocturnal",
-        "q": "Quad",
-        "st": "Stalker's",
-        "sup": "Suppressor's",
-        "tro": "Troubleshooter's",
-        "ts": "Two Shot",
-        "v": "Vampire's",
-        "z": "Zealot's"
-    },
-    {
-        "e3": "Explosive 3%",
-        "e": "Explosive",
-        "25": "Rapid",
-        "50c": "Vital",
-        "ss": "Melee Speed",
-        "40p": "Power Attack Damage",
-        "ap": "Inertial",
-        "25a": "Hitman's",
-        "50l": "Crippling",
-        "50h": "V.A.T.S. Enhanced",
-        "bash": "Basher's",
-        "sent": "Steady",
-        "block": "Riposting",
-        "last": "Last Shot",
-    },
-    {
-        "25": "V.A.T.S. Optimized",
-        "15r": "Swift",
-        "15v": "Lucky",
-        "90": "Lightweight",
-        "dur": "Durability",
-        "s": "Strength",
-        "p": "Perception",
-        "a": "Agility",
-        "e": "Endurance",
-        "stealth": "Ghost's",
-        "40": "Defender's",
-        "block": "Cavalier's",
-        "ms": "Nimble",
-        "50": "Steadfast",
-        "250": "Resilient",
-    }
-]
 
 fed76_weapon_abbrs = [
+    {},
     {
-        "44 Pistol": "44revolver",
-        "50 Cal": "50cal",
-        "10mm Pistol": "10mm",
-        "10mm Submachine": "10mmsub",
-        "Alien Blaster": "alien",
-        "Assault Rifle": "assault",
-        "Auto Grenade": "autolauncher",
-        "Blunderbuss": "blunderbuss",
-        "Powder Pistol": "powderpistol",
-        "Powder Rifle": "powderrifle",
-        "Broadsider": "broadsider",
-        "Combat Rifle": "combatrifle",
-        "Combat Shotgun": "combatshotgun",
-        "Compound": "compound",
-        "Crossbow": "crossbow",
-        "Bow": "bow",
-        "Cryolator": "cryolator",
-        "Double-Barrel": "doublebarrel",
-        "Enclave Plasma": "enclave",
-        "Fat Man": "fatman",
-        "Flamer": "flamer",
-        "Napalmer": "flamer",
-        "Gamma": "gamma",
-        "Gatling Gun": "gatling",
-        "Gatling Laser": "gatlaser",
-        "Gatling Plasma": "gatplasma",
-        "Gauss Rifle": "gauss",
-        "Handmade": "handmade",
-        "Harpoon": "harpoon",
-        "Hunting Rifle": "hunting",
-        "Laser Pistol": "laser",
-        "Laser Rifle": "laser",
-        "Laser Sniper Rifle": "laser",
-        "Lever Action": "lever",
-        "Light Machine Gun": "lmg",
+        "44_PISTOL": "44revolver",
+        "50_CAL": "50cal",
+        "10MM_PISTOL": "10mm",
+        "10MM_SUBMACHINE": "10mmsub",
+        "ALIEN_BLASTER": "alien",
+        "ASSAULT_RIFLE": "assault",
+        "AUTO_GRENADE": "autolauncher",
+        "BLUNDERBUSS": "blunderbuss",
+        "POWDER_PISTOL": "powderpistol",
+        "POWDER_RIFLE": "powderrifle",
+        "BROADSIDER": "broadsider",
+        "COMBAT_RIFLE": "combatrifle",
+        "COMBAT_SHOTGUN": "combatshotgun",
+        "COMPOUND": "compound",
+        "CROSSBOW": "crossbow",
+        "BOW": "bow",
+        "CRYOLATOR": "cryolator",
+        "DOUBLE_BARREL": "doublebarrel",
+        "ENCLAVE_PLASMA": "enclave",
+        "FAT_MAN": "fatman",
+        "FLAMER": "flamer",
+        "NAPALMER": "flamer",
+        "GAMMA": "gamma",
+        "GATLING_GUN": "gatling",
+        "GATLING_LASER": "gatlaser",
+        "GATLING_PLASMA": "gatplasma",
+        "GAUSS_RIFLE": "gauss",
+        "HANDMADE": "handmade",
+        "HARPOON": "harpoon",
+        "HUNTING_RIFLE": "hunting",
+        "LASER_PISTOL": "laser",
+        "LASER_RIFLE": "laser",
+        "LASER_SNIPER_RIFLE": "laser",
+        "LEVER_ACTION": "lever",
+        "LIGHT_MACHINE_GUN": "lmg",
         "M79": "grenadelauncher",
-        "Minigun": "minigun",
-        "Missile Launcher": "misslelauncher",
-        "Pepper Shaker": "pepper",
-        "Pipe Bolt-Action": "pipebolt",
-        "Pipe Pistol": "pipe",
-        "Pipe Rifle": "pipe",
-        "Pipe Revolver": "piperevolver",
-        "Plasma Pistol": "plasma",
-        "Plasma Rifle": "plasma",
-        "Plasma Sniper Rifle": "plasma",
-        "Plasma Thrower": "plasma",
-        "Plasma Shotgun": "plasma",
-        "Plasma Sniper Rifle": "plasma",
-        "Pump Action Shotgun": "pump",
-        "Radium ": "radium",
-        "Railway": "railway",
-        "Assaultron Head": "assaulthead",
-        "Single Action Revolver": "singlerevolver",
-        "Submachine Gun": "submachine",
-        "Tesla": "tesla",
-        "Dragon": "dragon",
-        "Fixer": "fixer",
-        "Ultracite Gatling Laser": "ultragatling",
-        "Ultracite Laser": "ultralaser",
-        "Western Revolver": "western",
-        
-        "Assaultron Blade": "assaultblade",
-        "Baseball Bat": "baseball",
-        "Baton": "baton",
-        "Bear Arm": "bear",
-        "Board": "board",
-        "Bone Club": "boneclub",
-        "Bone Hammer": "bonehammer",
-        "Bowie Knife": "bowie",
-        "Boxing Glove": "box",
-        "Chainsaw": "chainsaw",
-        "Chinese Officer Sword": "chinesesword",
-        "Combat Knife": "combatknife",
-        "Cultist Blade": "cultistblade",
-        "Cultist Dagger": "cultistdagger",
-        "Tambo": "tambo",
-        "Deathclaw Gauntlet": "deathclaw",
-        "Drill": "drill",
-        "Fire Axe": "fireaxe",
-        "Golf Club": "golfclub",
-        "Grognak's Axe": "grognak",
-        "Guitar Sword": "guitarsword",
-        "Hatchet": "hatchet",
-        "Knuckles": "knuckles",
-        "Lead Pipe": "leadpipe",
-        "Machete": "machete",
-        "Meat Hook": "meathook",
-        "Mole Miner Gauntlet": "molegauntlet",
-        "Buzz Blade": "buzzblade",
-        "Multi-Purpose Axe": "multiaxe",
-        "Pickaxe": "pickaxe",
-        "Pipe Wrench": "pipewrench",
-        "Pitchfork": "pitchfork",
-        "Pole Hook": "polehook",
-        "Pool Cue": "pool",
-        "Power Fist": "powerfist",
-        "Revolutionary Sword": "revolutionarysword",
-        "Ripper": "ripper",
-        "Rolling Pin": "rollingpin",
-        "Shepherd's Crook": "shepherdscrook",
-        "Sheepsquatch Club": "sheepclub",
-        "Sheepsquatch Staff": "sheepstaff",
-        "Shishkebab": "shishkebab",
-        "Shovel": "shovel",
-        "Sickle": "sickle",
-        "Ski Sword": "skisword",
-        "Sledgehammer": "sledgehammer",
-        "Spear": "spear",
-        "Super Sledge": "supersledge",
-        "Switchblade": "switchblade",
-        "The Tenderizer": "Tender",
-        "Tire Iron": "tireiron",
-        "Walking Cane": "walkingcane",
-        "War Drum": "wardrum"
+        "MINIGUN": "minigun",
+        "MISSILE_LAUNCHER": "misslelauncher",
+        "PEPPER_SHAKER": "pepper",
+        "PIPE_BOLT_ACTION": "pipebolt",
+        "PIPE_PISTOL": "pipe",
+        "PIPE_RIFLE": "pipe",
+        "PIPE_REVOLVER": "piperevolver",
+        "PLASMA_PISTOL": "plasma",
+        "PLASMA_RIFLE": "plasma",
+        "PLASMA_SNIPER_RIFLE": "plasma",
+        "PLASMA_THROWER": "plasma",
+        "PLASMA_SHOTGUN": "plasma",
+        "PUMP_ACTION_SHOTGUN": "pump",
+        "RADIUM_": "radium",
+        "RAILWAY": "railway",
+        "ASSAULTRON_HEAD": "assaulthead",
+        "SINGLE_ACTION_REVOLVER": "singlerevolver",
+        "SUBMACHINE_GUN": "submachine",
+        "TESLA": "tesla",
+        "DRAGON": "dragon",
+        "FIXER": "fixer",
+        "ULTRACITE_GATLING_LASER": "ultragatling",
+        "ULTRACITE_LASER": "ultralaser",
+        "WESTERN_REVOLVER": "western",
+        "ASSAULTRON_BLADE": "assaultblade",
+        "BASEBALL_BAT": "baseball",
+        "BATON": "baton",
+        "BEAR_ARM": "bear",
+        "BOARD": "board",
+        "BONE_CLUB": "boneclub",
+        "BONE_HAMMER": "bonehammer",
+        "BOWIE_KNIFE": "bowie",
+        "BOXING_GLOVE": "box",
+        "CHAINSAW": "chainsaw",
+        "CHINESE_OFFICER_SWORD": "chinesesword",
+        "COMBAT_KNIFE": "combatknife",
+        "CULTIST_BLADE": "cultistblade",
+        "CULTIST_DAGGER": "cultistdagger",
+        "TAMBO": "tambo",
+        "DEATHCLAW_GAUNTLET": "deathclaw",
+        "DRILL": "drill",
+        "FIRE_AXE": "fireaxe",
+        "GOLF_CLUB": "golfclub",
+        "GROGNAKS_AXE": "grognak",
+        "GUITAR_SWORD": "guitarsword",
+        "HATCHET": "hatchet",
+        "KNUCKLES": "knuckles",
+        "LEAD_PIPE": "leadpipe",
+        "MACHETE": "machete",
+        "MEAT_HOOK": "meathook",
+        "MOLE_MINER_GAUNTLET": "molegauntlet",
+        "BUZZ_BLADE": "buzzblade",
+        "MULTI_PURPOSE_AXE": "multiaxe",
+        "PICKAXE": "pickaxe",
+        "PIPE_WRENCH": "pipewrench",
+        "PITCHFORK": "pitchfork",
+        "POLE_HOOK": "polehook",
+        "POOL_CUE": "pool",
+        "POWER_FIST": "powerfist",
+        "REVOLUTIONARY_SWORD": "revolutionarysword",
+        "RIPPER": "ripper",
+        "ROLLING_PIN": "rollingpin",
+        "SHEPHERDS_CROOK": "shepherdscrook",
+        "SHEEPSQUATCH_CLUB": "sheepclub",
+        "SHEEPSQUATCH_STAFF": "sheepstaff",
+        "SHISHKEBAB": "shishkebab",
+        "SHOVEL": "shovel",
+        "SICKLE": "sickle",
+        "SKI_SWORD": "skisword",
+        "SLEDGEHAMMER": "sledgehammer",
+        "SPEAR": "spear",
+        "SUPER_SLEDGE": "supersledge",
+        "SWITCHBLADE": "switchblade",
+        "THE_TENDERIZER": "Tender",
+        "TIRE_IRON": "tireiron",
+        "WALKING_CANE": "walkingcane",
+        "WAR_DRUM": "wardrum"
     },
     {
+        "aa": "aa",
+        "ari": "ari",
         "ass": "a",
+        "b": "b",
         "ber": "br",
+        "exe": "exe",
+        "ext": "ext",
+        "f": "f",
         "gou": "gour",
+        "gs": "gs",
+        "h": "h",
+        "i": "i",
+        "jug": "jug",
+        "j": "j",
         "med": "m",
+        "ms": "mutslayer",
+        "mu": "mu",
+        "n": "n",
+        "q": "q",
+        "st": "st",
         "sup": "su",
         "tro": "t",
-        "ms": "mutslayer"
+        "ts": "ts",
+        "v": "v",
+        "z": "z"
     },
     {
+        "e3": "e",
+        "e": "e",
         "25": "ffr",
         "50c": "50",
-        "e3": "e",
+        "ss": "ss",
+        "40p": "40p",
         "ap": "ine",
         "25a": "hit",
+        "50l": "50l",
+        "50h": "50h",
+        "bash": "50b",
         "sent": "ste",
         "block": "50r",
-        "bash": "50b"
+        "last": "last"
     },
     {
+        "25": "25",
+        "15r": "15r",
+        "15v": "15v",
+        "90": "90",
+        "dur": "dur",
         "s": "str",
         "p": "per",
-        "e": "end",
         "a": "agi",
-        "50": "50dr",
+        "e": "end",
+        "stealth": "gho",
+        "40": "40",
         "block": "15b",
-        "stealth": "gho"
+        "ms": "ms",
+        "50": "50dr",
+        "250": "250"
     }
 ]
 
+
 fed76_armor_abbrs = [
+    {},
     {
-        "Combat": "combat",
-        "Leather": "leather",
-        "Marine": "marine",
-        "Metal": "metal",
-        "Raider": "raider",
-        "Robot": "robot",
-        "Urban": "scout",
-        "Forest": "scout",
-        "Trapper": "trapper",
-        "Wood": "wood"
+        "COMBAT": "combat",
+        "LEATHER": "leather",
+        "MARINE": "marine",
+        "METAL": "metal",
+        "RAIDER": "raider",
+        "ROBOT": "robot",
+        "URBAN_SCOUT": "scout",
+        "FOREST_SCOUT": "scout",
+        "TRAPPER": "trapper",
+        "WOOD": "wood"
     },
     {
+        "ari":"ari",
         "ass": "assn",
         "auto": "autostim",
         "bol": "bolst",
+        "cham": "cham",
+        "cloak": "cloak",
+        "ext": "ext",
         "gs": "ghoulslayer",
         "h": "hunter",
         "ls": "lifesaving",
@@ -1259,52 +885,70 @@ fed76_armor_abbrs = [
         "z": "zealot"
     },
     {
-        "luck": "lck",
+        "int": "int",
+        "ap": "ap",
+        "str": "str",
+        "hard": "hard",
+        "25p": "poison",
         "25c": "warm",
-        "25d": "env",
         "25f": "fire",
         "25r": "rad",
-        "25p": "poison"
+        "luck": "lck",
+        "end": "end",
+        "per": "per",
+        "agi": "agi",
+        "glut": "glut",
+        "cha": "cha",
+        "25d": "env"
     },
     {
+        "wwr": "wpn",
+        "sent": "sent",
+        "acrobat": "acrobat",
+        "cav": "cav",
+        "sneak": "sneak",
         "fwr": "food",
         "awr": "ammo",
         "jwr": "junk",
-        "wwr": "wpn",
+        "dur": "dur",
+        "ldr": "limb",
         "block": "blocker",
-        "cryo": "icy",
         "energy": "ele",
         "fire": "burn",
+        "cryo": "icy",
         "poison": "tox",
+        "doc": "doc",
+        "lock": "safe",
         "rad": "diss",
-        "ldr": "limb",
-        "lock": "safe"
+        "aqua": "aqua"
     }
 ]
 
+
 filter_flags = {
-    4: "weapon",
-    8: "armor",
-    16: "apparel",
-    32: "food/drink",
-    64: "aid",
-    1024: "note",
-    4096: "misc",
-    8192: "junk",
-    16384: "mods",
-    32768: "ammo",
-    65536: "holo",
-    266240: "misc",
-    270336: "scrap"
+	4: "WEAPON",
+    8: "ARMOR",
+    16: "APPAREL",
+    32: "FOOD_DRINK",
+    64: "AID",
+    1024: "NOTE",
+    4096: "MISC",
+    8192: "JUNK",
+    16384: "MODS",
+    32768: "AMMO",
+    65536: "HOLO",
+    266240: "MISC",
+    270336: "SCRAP"
 }
 
 
 def get_legendary_abbr(item_desc: str, descriptions):
+    desc = item_desc.lower().replace('\n', '').replace('â¬', '').replace('¬', '')
     effects = 0
     item_legendary_effects = ''
     for star in range(3):
         for legendary_effect in descriptions[star]:
-            if descriptions[star][legendary_effect] in item_desc:
+            if descriptions[star][legendary_effect] in desc:
                 while effects < star:
                     effects += 1
                     item_legendary_effects += '/'
@@ -1315,16 +959,17 @@ def get_legendary_abbr(item_desc: str, descriptions):
 
 
 def get_armor_type(item_text):
-    for type in armor_types:
-        if type in item_text:
-            return armor_types[type]
-
+    for i, (k, v) in enumerate(armor_types.items()):
+        if v in item_text:
+            return k
+    return ''
+    
 
 def get_armor_grade(item_text):
-    if str.find(item_text, 'Heavy') != -1:
-        return 'Heavy'
-    elif str.find(item_text, 'Sturdy') != -1:
-        return 'Sturdy'
+    if armor_grades['HEAVY'] in item_text:
+        return 'HEAVY'
+    if armor_grades['STURDY'] in item_text:
+        return 'STURDY'
     return ''
 
 
@@ -1336,7 +981,7 @@ def lookup_armor_grade(armor_full_name, armor_type, armor_piece, armor_level: st
     grade = ''
     if(armor_piece == 'CH'):
         piece = 'CHEST'
-    elif (armor_type == 'Robot'):
+    elif (armor_type == 'ROBOT'):
         if(armor_piece in ['LA', 'RA']):
             piece = 'ARM'
         else:
@@ -1344,44 +989,64 @@ def lookup_armor_grade(armor_full_name, armor_type, armor_piece, armor_level: st
     else:
         piece = 'LIMB'
                 
-    for material in graded_armor.get(armor_type).get(piece):
-        if str.find(armor_full_name, material) != -1:
+    for material in graded_armor[armor_type][piece]:
+        if material != 'DEFAULT' and armor_prefixes[material] in armor_full_name:
             dr, er, rr = reduce_resistances(dr, er, rr, graded_armor.get(armor_type).get(piece).get(material).get(armor_level))
 
     resistances = '/'.join([str(dr), str(er), str(rr)])
     if armor_piece and armor_type:
-        grade = graded_armor.get(armor_type).get(piece).get('Default').get(armor_level).get(resistances)
+        grade = graded_armor.get(armor_type).get(piece).get('DEFAULT').get(armor_level).get(resistances)
     if not grade:
         return '/'.join([str(dr), str(er), str(rr)])
     return grade
 
 
 def get_armor_piece(item_text):
-    for piece in armor_pieces:
-        if piece in item_text:
-            return armor_pieces[piece]
+    
+    for i, (k, v) in enumerate(armor_pieces.items()):
+        if v in item_text:
+            return k
+    return ''
+
+
+def get_armor_piece_short(item_text):
+    
+    for i, (k, v) in enumerate(armor_pieces.items()):
+        if v in item_text:
+            return armor_pieces_abbr.get(k)
     return ''
 
 
 def remove_prefixes(item_text: str, prefixes_to_remove):
     new_text = item_text
-    for prefix in prefixes_to_remove:
-        if new_text.find(prefixes_to_remove[prefix]) != -1:
-            new_text = str.replace(new_text, prefixes_to_remove[prefix], '', 1).strip()
+    for i, (k, v) in enumerate(prefixes_to_remove.items()):
+        if v in new_text:
+            new_text = str.replace(new_text, v, '', 1).strip()
     return new_text
 
 
+def get_item_name_short(item_text: str, item_names):
+    for i, (k, v) in enumerate(item_names.items()):
+        if v in item_text:
+            if k == 'BOW' and item_names['COMPOUND'] in item_text:
+                return item_names['COMPOUND']
+            elif k == 'RAIDER' and item_names['RAIDER_POWER'] in item_text:
+                return item_names['RAIDER_POWER']
+            return v
+    return ''
+    
+
 def format_for_pricecheck(item_text: str, item_legendary_abbr, fed76_abbrs, armor_grade: str = None, armor_piece: str = None):
     item_arg = ''
-    for item in fed76_abbrs[0]:
-        if item_text.find(item) != -1:
-            item_arg = fed76_abbrs[0][item]
+    for i, (k, v) in enumerate(fed76_abbrs[0].items()):
+        if v in item_text:
+            item_arg = fed76_abbrs[1][k]
             if not armor_grade:
-                if item == 'bow' and item_text.find('Compound') != -1:
-                    item_arg = fed76_abbrs[0]['Compound']
+                if v == 'bow' and 'Compound' in item_text:
+                    item_arg = fed76_abbrs[1]['COMPOUND']
                 break
             else:
-                if item_text == 'Raider Power':
+                if item_text == 'RAIDER_POWER':
                     return ''
     
     if not item_arg:
@@ -1395,13 +1060,13 @@ def format_for_pricecheck(item_text: str, item_legendary_abbr, fed76_abbrs, armo
         if abbr_arg:
             abbr_arg = abbr_arg + '%2F'
             
-        if item_legendary_abbr[k] in fed76_abbrs[k + 1]:
-            abbr_arg = abbr_arg + fed76_abbrs[k + 1][item_legendary_abbr[k]]
+        if item_legendary_abbr[k] in fed76_abbrs[k + 2]:
+            abbr_arg = abbr_arg + fed76_abbrs[k + 2][item_legendary_abbr[k]]
         else:
             abbr_arg = abbr_arg + item_legendary_abbr[k]
 
     if armor_grade:
-        return item_arg + '&effects=' + abbr_arg + '&grade=' + armor_grade + '&piece=' + armor_piece
+        return item_arg + '&effects=' + abbr_arg + '&grade=' + armor_grade.title() + '&piece=' + armor_piece
     else:
         return item_arg + '&effects=' + abbr_arg
 
@@ -1420,22 +1085,73 @@ def format_plan_prices(plan):
         plan.append(low)
         plan.append(high)
     
-    if(str.find(plan[17], "NPC") != -1):
-        plan[17] = "NPC vendors"
+    if(str.find(plan[17], 'NPC') != -1):
+        plan[17] = npc_vendors
     elif(len(plan) == 20):
         plan[17] = ''
     else:
         plan[17] = temp_price
 
 
+def load_translation(lang:dict):
+    global column_names
+    global item_sources
+    global filter_flag_names
+    global armor_grades
+    global armor_pieces
+    global armor_pieces_abbr
+    global armor_types
+    global armor_effects
+    global armor_descriptions
+    global weapon_effects
+    global weapon_descriptions
+    global armor_prefixes
+    global armor_mod_leaded
+    global weapon_type_melee
+    global weapon_type_ranged
+    global npc_vendors
+    column_names = lang['COLUMN_NAMES']
+    item_sources = lang['ITEM_SOURCES']
+    filter_flag_names = lang['FILTER_FLAGS']
+    armor_grades = lang['ARMOR_GRADES']
+    armor_pieces = lang['ARMOR_PIECES']
+    armor_pieces_abbr = lang['ARMOR_PIECES_ABBREVIATED']
+    armor_types = lang['ARMOR_TYPES']
+    fed76_weapon_abbrs[0] = lang['WEAPONS']
+    armor_effects = lang['LEGENDARY_ARMOR']['EFFECTS']
+    armor_descriptions = lang['LEGENDARY_ARMOR']['DESCRIPTIONS']
+    weapon_effects = lang['LEGENDARY_WEAPON']['EFFECTS']
+    weapon_descriptions = lang['LEGENDARY_WEAPON']['DESCRIPTIONS']
+    armor_prefixes = lang['ARMOR_PREFIXES']
+    armor_mod_leaded = lang['MISC']['ARMOR_MOD_LEADED']
+    weapon_type_melee = lang['MISC']['WEAPON_TYPE_MELEE']
+    weapon_type_ranged = lang['MISC']['WEAPON_TYPE_RANGED']
+    npc_vendors = lang['MISC']['NPC_VENDORS']
+    for i, (k, v) in enumerate(fed76_armor_abbrs[1].items()):
+        if k in lang['ARMOR_TYPES']:
+            fed76_armor_abbrs[0][k] = lang['ARMOR_TYPES'][k]
+        
+
+def printLocalized(values: object, sep: str | None = ' '):
+    if len(values) > 2 and values[2] in filter_flag_names:
+        values[2] = filter_flag_names[values[2]]
+    if len(values) > 3 and values[3] in armor_types:
+        values[3] = armor_types[values[3]]
+    if len(values) > 5 and values[5] in armor_grades:
+        values[5] = armor_grades[values[5]]
     
+    print(sep.join(map(str, values)))
+
+
 def main():
     parser = argparse.ArgumentParser(
         prog='InventOMatic-Parser',
         description='Script for parsing inventory dump from invent-o-matic stash for Fallout 76',
-        epilog='Version 1.2.2, Written by Zelia')
+        epilog='Version 1.3, Written by Zelia')
     parser.add_argument('-f', metavar='filename', type=str, required=True,
                         help='Path to inventory dump file')
+    parser.add_argument('-l', metavar='language', type=str, default='en',
+                        help='Optional translation language, default is English')
     parser.add_argument('-s', metavar='separator', type=str, default='\t',
                         help='Optional output value separator, default is TAB')
     parser.add_argument('-pc', action='store_true',
@@ -1445,6 +1161,8 @@ def main():
     args = parser.parse_args()
     filename = args.f
     separator = args.s
+    lang = args.l
+    language_filename = "lang_" + lang + ".json"
     is_pricecheck = args.pc
     pricecheck_api_url = "https://fed76.info/pricing-api/?item="
     pricecheck_plans_api_url = "https://fed76.info/plan-api/?id="
@@ -1456,9 +1174,17 @@ def main():
         print('Invalid file path %s' % (filename))
         return
     
+    if not exists(language_filename):
+        print('Invalid language file path %s' % (language_filename))
+        return
+    
     with open(filename) as json_data:
         data = json.load(json_data)
 
+    with open(language_filename) as json_lang_data:
+        lang_data = json.load(json_lang_data)
+        load_translation(lang_data)
+    
     account_name = ''
     count_armor = 0
     count_weapon = 0
@@ -1483,11 +1209,29 @@ def main():
     for character_name in data['characterInventories']:
         account_name = data['characterInventories'][character_name].get('AccountInfoData').get('name')
         # print('Account: %s, Character: %s' % (account_name, character_name))
-        print('Item Name', 'Count', 'Item Type', 'Type', 'Armor Piece', 'Armor Grade', 
-                  'Stars', 'Level', 'Abbr', 'Prefix', 'Major', 'Minor', 'Account',
-                  'Char', 'Source', 'Full Item name',
-                  'FED76 Price', 'Quicksale', 'Low', 'High', 'Niche',
-                  sep=separator)
+        print(
+            column_names['ITEM_NAME'],
+            column_names['COUNT'],
+            column_names['ITEM_TYPE'],
+            column_names['TYPE'],
+            column_names['ARMOR_PIECE'],
+            column_names['ARMOR_GRADE'],
+            column_names['STARS'],
+            column_names['LEVEL'],
+            column_names['ABBR'],
+            column_names['PREFIX'],
+            column_names['MAJOR'],
+            column_names['MINOR'],
+            column_names['ACCOUNT'],
+            column_names['CHAR'],
+            column_names['SOURCE'],
+            column_names['FULL_ITEM_NAME'],
+            column_names['FED76_PRICE'],
+            column_names['QUICKSALE'],
+            column_names['LOW'],
+            column_names['HIGH'],
+            column_names['NICHE'],
+            sep=separator)
 
         for item_source in item_sources:
             if not data['characterInventories'][character_name].get(item_source):
@@ -1505,7 +1249,7 @@ def main():
                     item['filterFlag']^0x1) or item['filterFlag'] # favourited items have 0x1 flag set
 
                 # LEGENDARY ARMOR
-                if item_type == 'armor' and item['itemLevel'] != 0:
+                if item_type == 'ARMOR' and item['itemLevel'] != 0:
                     armor_dr = 0
                     armor_er = 0
                     armor_rr = 0
@@ -1535,32 +1279,39 @@ def main():
 
                     if item_legendary_stars > 1 and len(abbrs) > 1 and abbrs[1] == '25r':
                         armor_rr -= 25
-                    if str.find(item_text, 'Leaded') != -1:
+                    if armor_mod_leaded in item_text:
                         armor_rr -= 10
 
                     armor_type = get_armor_type(item_text)
-                    armor_piece = get_armor_piece(item_text)
+                    armor_piece = get_armor_piece_short(item_text)
 
                     armor_grade = ''
                     if armor_type in graded_armor:
                         armor_grade = get_armor_grade(item_text)
                         if armor_grade == '' and armor_piece and armor_type:
                             armor_grade = lookup_armor_grade(item_text, armor_type, armor_piece, item_level, armor_dr, armor_er, armor_rr)
-
-
-                    item_name_short = remove_prefixes(
-                        item_text, armor_effects[0])
-                    item_name_short = remove_prefixes(
-                        item_name_short, armor_prefixes_to_remove)
+                    
+                    armor_piece_long = get_armor_piece(item_text)
+                    if bool(armor_piece_long) and bool(item_name_short):
+                        lookup_name = get_item_name_short(item_text, armor_types)
+                        lookup_grade = '' if '/' in armor_grade or not bool(armor_grade) else (armor_grades[armor_grade] + ' ')
+                        if not bool(lookup_name):
+                            item_name_short = item_text
+                        else:
+                            item_name_short = str.format('%s%s%s' % (
+                                lookup_grade,
+                                lookup_name + ' ',
+                                armor_pieces[get_armor_piece(item_text)]))
+                    else:
+                        item_name_short = item_text
 
                     count_armor += 1
                     if (is_pricecheck
                         and armor_type
-                        and item['isTradable']
                         and int(item_level) >= 45
                         and is_pricecheck_abbr_valid
                         and armor_grade.find('/') == -1):
-                        pricecheck_arg = format_for_pricecheck(armor_type, abbrs, fed76_armor_abbrs, armor_grade or 'Sturdy', armor_piece)
+                        pricecheck_arg = format_for_pricecheck(armor_type.title(), abbrs, fed76_armor_abbrs, armor_grade or 'STURDY', armor_piece)
                         url = pricecheck_api_url + pricecheck_arg
                         if pricecheck_arg and url in pricecheck_urls:
                             existing_count = pricecheck_urls[url][1]
@@ -1581,7 +1332,7 @@ def main():
                                 item_sources[item_source],
                                 item_text]
                             continue
-                    item_id = str.format("%s %s %s %s %s %s" % (item_name_short, armor_type, armor_grade, armor_piece, item_legendary_abbr, item_level))
+                    item_id = str.format('%s %s %s %s %s %s' % (item_name_short, armor_type, armor_grade, armor_piece, item_legendary_abbr, item_level))
                     if item_id in items:
                         existing_count = items[item_id][1]
                         count_duplicate += 1
@@ -1601,17 +1352,17 @@ def main():
                         item_text]
 
                 # LEGENDARY WEAPONS
-                elif item_type == 'weapon' and item['itemLevel'] != 0:
+                elif item_type == 'WEAPON' and item['itemLevel'] != 0:
                     is_pricecheck_abbr_valid = True
                     item_level = str(item['itemLevel'])
-                    weapon_type = 'Ranged'
+                    weapon_type = weapon_type_ranged
 
                     for item_card_entry in item['ItemCardEntries']:
                         if item_card_entry['text'] == 'DESC':
                             item_desc = item_card_entry['value']
                             break
                         elif item_card_entry['text'] == '$speed':
-                            weapon_type = 'Melee'
+                            weapon_type = weapon_type_melee
 
                     item_legendary_abbr = get_legendary_abbr(
                         item_desc.lower(), weapon_descriptions)
@@ -1624,14 +1375,12 @@ def main():
                         else:
                             is_pricecheck_abbr_valid = False
 
-                    item_name_short = remove_prefixes(
-                        item_text, weapon_effects[0])
-                    item_name_short = remove_prefixes(
-                        item_name_short, weapon_prefixes_to_remove)
-
+                    item_name_short = get_item_name_short(item_text, fed76_weapon_abbrs[0])
+                    if not bool(item_name_short):
+                        item_name_short = remove_prefixes(item_text, weapon_effects[0])
+                        
                     count_weapon += 1
                     if (is_pricecheck
-                        and item['isTradable']
                         and item['itemLevel'] >= 45
                         and is_pricecheck_abbr_valid):
                         pricecheck_arg = format_for_pricecheck(item_text, abbrs, fed76_weapon_abbrs)
@@ -1654,7 +1403,7 @@ def main():
                                 item_sources[item_source],
                                 item_text]
                             continue
-                    item_id = str.format("%s %s %s" % (item_name_short, item_legendary_abbr, item_level))
+                    item_id = str.format('%s %s %s' % (item_name_short, item_legendary_abbr, item_level))
                     if item_id in items:
                         existing_count = items[item_id][1]
                         count_duplicate += 1
@@ -1673,7 +1422,7 @@ def main():
                             item_text]
 
                 # LEGENDARY APPAREL
-                elif item_type == 'apparel' and item_legendary_stars != 0:
+                elif item_type == 'APPAREL' and item_legendary_stars != 0:
                     item_level = str(item['itemLevel'])
                     item_legendary_stars = item['numLegendaryStars']
                     for item_card_entry in item['ItemCardEntries']:
@@ -1690,7 +1439,7 @@ def main():
                             item_effects[k] = (armor_effects[k][abbrs[k]])
                             
                     count_other += 1
-                    print(item_text,
+                    printLocalized([item_text,
                           item_count,
                           item_type,
                           '', '', '',
@@ -1701,11 +1450,11 @@ def main():
                           account_name,
                           character_name,
                           item_sources[item_source],
-                          item_text,
+                          item_text],
                           sep=separator)
 
                 # PLANS/RECIPES
-                elif item_type == 'note':
+                elif item_type == 'NOTE':
                     count_plan += 1
                     if (is_pricecheck and item['isTradable']):
                         if item_text in pricecheck_plans:
@@ -1755,7 +1504,7 @@ def main():
                         if response.status == 200:
                             results[url] = obj
                         else:
-                            print("Error pricechecking %s" % url)
+                            print('Error pricechecking %s' % url)
             await asyncio.gather(*(get(url) for url in pricecheck_urls))
             await session.close()
 
@@ -1787,7 +1536,7 @@ def main():
         fetch_plan_database_time = time.time()
         
         df_selected = df[['formid', 'name']]
-        empty_pref = "00000000"
+        empty_pref = '00000000'
         for row in range(int(df_selected.size / 2)):
             df_selected.values[row][1] = str.lower(df_selected.values[row][1])
             df_selected.values[row][1] = str.replace(df_selected.values[row][1], 'plan:', '', 1).strip()
@@ -1818,7 +1567,7 @@ def main():
                                 plan.append(obj['price'])
                                 plan.append(obj['verdict'])
                             else:
-                                plan.append("Error pricechecking")
+                                plan.append('Error pricechecking')
             
             await asyncio.gather(*(get(pricecheck_plans[plan]) for plan in pricecheck_plans))
             await session.close()
@@ -1830,20 +1579,22 @@ def main():
         plan_pricecheck_time = time.time()
         
         for url in pricecheck_urls:
-            print(separator.join(map(str, pricecheck_urls[url])))
+            printLocalized(pricecheck_urls[url], sep=separator)
         
         for plan in pricecheck_plans:
             format_plan_prices(pricecheck_plans[plan])
-            print(separator.join(map(str, pricecheck_plans[plan])))
+            printLocalized(pricecheck_plans[plan], sep=separator)
 
     for item in items:
-        print(separator.join(map(str, items[item])))
+        printLocalized(items[item], sep=separator)
 
     print()
+    print('Inventory file loaded: ' + filename)
+    print('Language file loaded: ' + language_filename)
     if is_pricecheck:
         print('Prices checked: %s legendary, %s plans (%s duplicates)' % (len(pricecheck_urls), count_plan_pc, count_duplicate_pc))
         print('Plan database fetched in %s seconds %s' % (f'{fetch_plan_database_time - legendary_pricecheck_time:.4g}',
-                                                          "(cached %s min ago)" % plan_db_cached if plan_db_cached > 0 else '(url fetch)'))
+                                                          '(cached %s min ago)' % plan_db_cached if plan_db_cached > 0 else '(url fetch)'))
         print('Price check legendary done in %s seconds' % (f'{legendary_pricecheck_time - parse_time:.4g}'))
         print('Price check plan/recipe done in %s seconds' % (f'{plan_pricecheck_time - fetch_plan_database_time:.4g}'))
 
