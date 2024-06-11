@@ -6,7 +6,7 @@
 > I have no previous professional experience with python, if you want optimized or clean code you are free to do it yourself
 
 > [!IMPORTANT]
-> WORKS ONLY FOR ENGLISH VERSION OF GAME
+> CURRENTLY ONLY HAS TRANSLATION FOR ENGLISH VERSION, OTHER VERSIONS NEED TRANSLATING 
 
 ### Legendary effects
 - Removed effects will just show as empty string, e.g. /ss/s, v//25, //90
@@ -30,8 +30,9 @@
 
 ## Usage
 Default separator is TAB
+Default language is en
 ```
-InventOMatic-Parser -f filename [-s separator] [-pc]
+InventOMatic-Parser -f filename [-s separator] [-pc] [-l LANG]
 ```
 
 Print to new file
