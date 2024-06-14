@@ -29,10 +29,10 @@
 
 
 ## Usage
-Default separator is TAB
-Default language is en
 ```
-InventOMatic-Parser -f filename [-s separator] [-pc] [-l LANG]
+InventOMatic-Parser -h
+
+InventOMatic-Parser -f filename [-s separator='\t'] [-l language='en'] [-e encoding='utf8'] [-pc]
 ```
 
 Print to new file
