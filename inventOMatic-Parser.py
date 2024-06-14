@@ -949,7 +949,7 @@ def get_legendary_abbr(item_desc: str, descriptions):
     item_legendary_effects = ''
     for star in range(3):
         for legendary_effect in descriptions[star]:
-            if descriptions[star][legendary_effect] in desc:
+            if descriptions[star][legendary_effect].lower() in desc:
                 while effects < star:
                     effects += 1
                     item_legendary_effects += '/'
@@ -1148,7 +1148,7 @@ def main():
     parser = argparse.ArgumentParser(
         prog='InventOMatic-Parser',
         description='Script for parsing inventory dump from invent-o-matic stash for Fallout 76',
-        epilog='Version 1.3.1, Written by Zelia')
+        epilog='Version 1.3.2, Written by Zelia')
     parser.add_argument('-f', metavar='filename', type=str, required=True,
                         help='Path to inventory dump file')
     parser.add_argument('-l', metavar='language', type=str, default='en',
@@ -1177,7 +1177,7 @@ def main():
     sys.stdout.reconfigure(encoding=encoding)
     sys.stdin.reconfigure(encoding=encoding)
     sys.stderr.reconfigure(encoding=encoding)
-    
+
     if not exists(filename):
         print('Invalid file path %s' % (filename))
         return
@@ -1275,7 +1275,7 @@ def main():
                                 armor_rr = int(item_card_entry['value'])
 
                     item_legendary_abbr = get_legendary_abbr(
-                        item_desc.lower(), armor_descriptions)
+                        item_desc, armor_descriptions)
                     abbrs = item_legendary_abbr.split('/')
 
                     item_effects = ['', '', '']
