@@ -1,3 +1,4 @@
+import sys
 import asyncio
 import aiohttp
 import json
@@ -926,7 +927,7 @@ fed76_armor_abbrs = [
 
 
 filter_flags = {
-	4: "WEAPON",
+    4: "WEAPON",
     8: "ARMOR",
     16: "APPAREL",
     32: "FOOD_DRINK",
@@ -1147,13 +1148,15 @@ def main():
     parser = argparse.ArgumentParser(
         prog='InventOMatic-Parser',
         description='Script for parsing inventory dump from invent-o-matic stash for Fallout 76',
-        epilog='Version 1.3, Written by Zelia')
+        epilog='Version 1.3.1, Written by Zelia')
     parser.add_argument('-f', metavar='filename', type=str, required=True,
                         help='Path to inventory dump file')
     parser.add_argument('-l', metavar='language', type=str, default='en',
                         help='Optional translation language, default is English')
     parser.add_argument('-s', metavar='separator', type=str, default='\t',
                         help='Optional output value separator, default is TAB')
+    parser.add_argument('-e', metavar='encoding', type=str, default='utf8',
+                        help='Optional encoding for input/output, default is utf8')
     parser.add_argument('-pc', action='store_true',
                         help='Request price checks from fed76.info \
                         (significantly increases processing time)')
@@ -1162,13 +1165,18 @@ def main():
     filename = args.f
     separator = args.s
     lang = args.l
-    language_filename = "lang_" + lang + ".json"
+    encoding = args.e
     is_pricecheck = args.pc
+    language_filename = "lang_" + lang + ".json"
     pricecheck_api_url = "https://fed76.info/pricing-api/?item="
     pricecheck_plans_api_url = "https://fed76.info/plan-api/?id="
     plan_database_url = r"https://docs.google.com/spreadsheets/d/1Ul78ln8sBzFVTcaNL42aWea6j9v6CXA7nMWnM6O56rk/export?format=xlsx"
     plan_database_file = "PlanList.xlsx";
     plan_database_file_cache_time = 3600
+    
+    sys.stdout.reconfigure(encoding=encoding)
+    sys.stdin.reconfigure(encoding=encoding)
+    sys.stderr.reconfigure(encoding=encoding)
     
     if not exists(filename):
         print('Invalid file path %s' % (filename))
@@ -1178,10 +1186,10 @@ def main():
         print('Invalid language file path %s' % (language_filename))
         return
     
-    with open(filename) as json_data:
+    with open(filename, encoding=encoding) as json_data:
         data = json.load(json_data)
 
-    with open(language_filename) as json_lang_data:
+    with open(language_filename, encoding=encoding) as json_lang_data:
         lang_data = json.load(json_lang_data)
         load_translation(lang_data)
     
