@@ -6,7 +6,6 @@ import time
 import argparse
 import numbers
 from os.path import exists, getmtime
-from itertools import chain
 import pandas as pd
 
 start_time = time.time()
@@ -961,7 +960,7 @@ def get_legendary_abbr(item_desc: str, descriptions):
 
 def get_armor_type(item_text):
     for i, (k, v) in enumerate(armor_types.items()):
-        if v in item_text:
+        if v.lower() in item_text.lower():
             return k
     return ''
     
@@ -980,10 +979,10 @@ def reduce_resistances(dr, er, rr, resistances):
 
 def lookup_armor_grade(armor_full_name, armor_type, armor_piece, armor_level: str, dr: int, er: int, rr: int):
     grade = ''
-    if(armor_piece == 'CH'):
+    if(armor_piece == 'CHEST_PIECE'):
         piece = 'CHEST'
     elif (armor_type == 'ROBOT'):
-        if(armor_piece in ['LA', 'RA']):
+        if(armor_piece in ['LEFT_ARM', 'RIGHT_ARM']):
             piece = 'ARM'
         else:
             piece = 'LEG'
@@ -1005,15 +1004,15 @@ def lookup_armor_grade(armor_full_name, armor_type, armor_piece, armor_level: st
 def get_armor_piece(item_text):
     
     for i, (k, v) in enumerate(armor_pieces.items()):
-        if v in item_text:
+        if v.lower() in item_text.lower():
             return k
     return ''
 
 
-def get_armor_piece_short(item_text):
+def get_armor_piece_abbr(item_text):
     
     for i, (k, v) in enumerate(armor_pieces.items()):
-        if v in item_text:
+        if v.lower() in item_text.lower():
             return armor_pieces_abbr.get(k)
     return ''
 
@@ -1027,12 +1026,17 @@ def remove_prefixes(item_text: str, prefixes_to_remove):
 
 
 def get_item_name_short(item_text: str, item_names):
+    text = item_text.lower()
     for i, (k, v) in enumerate(item_names.items()):
-        if v in item_text:
-            if k == 'BOW' and item_names['COMPOUND'] in item_text:
+        if v in text:
+            if k == 'BOW' and item_names['COMPOUND'].lower() in text:
                 return item_names['COMPOUND']
-            elif k == 'RAIDER' and item_names['RAIDER_POWER'] in item_text:
+            elif k == 'RAIDER' and item_names['RAIDER_POWER'].lower() in text:
                 return item_names['RAIDER_POWER']
+            elif k == 'MARINE' and item_names['ARCTIC_MARINE'].lower() in text:
+                return item_names['ARCTIC_MARINE']
+            elif k == 'ROBOT' and item_names['BOTSMITH'].lower() in text:
+                return item_names['BOTSMITH']
             return v
     return ''
     
@@ -1148,7 +1152,7 @@ def main():
     parser = argparse.ArgumentParser(
         prog='InventOMatic-Parser',
         description='Script for parsing inventory dump from invent-o-matic stash for Fallout 76',
-        epilog='Version 1.3.2, Written by Zelia')
+        epilog='Version 1.3.3, Written by Zelia')
     parser.add_argument('-f', metavar='filename', type=str, required=True,
                         help='Path to inventory dump file')
     parser.add_argument('-l', metavar='language', type=str, default='en',
@@ -1290,28 +1294,29 @@ def main():
                     if armor_mod_leaded in item_text:
                         armor_rr -= 10
 
-                    armor_type = get_armor_type(item_text)
-                    armor_piece = get_armor_piece_short(item_text)
+                    item_name_no_prefix = remove_prefixes(item_text, armor_effects[0])
+                    armor_type = get_armor_type(item_name_no_prefix)
+                    armor_piece_long = get_armor_piece(item_name_no_prefix)
+                    armor_piece_abbr = get_armor_piece_abbr(item_name_no_prefix)
 
                     armor_grade = ''
                     if armor_type in graded_armor:
-                        armor_grade = get_armor_grade(item_text)
-                        if armor_grade == '' and armor_piece and armor_type:
-                            armor_grade = lookup_armor_grade(item_text, armor_type, armor_piece, item_level, armor_dr, armor_er, armor_rr)
+                        armor_grade = get_armor_grade(item_name_no_prefix)
+                        if armor_grade == '' and armor_piece_abbr and armor_type:
+                            armor_grade = lookup_armor_grade(item_name_no_prefix, armor_type, armor_piece_long, item_level, armor_dr, armor_er, armor_rr)
                     
-                    armor_piece_long = get_armor_piece(item_text)
                     if bool(armor_piece_long) and bool(item_name_short):
-                        lookup_name = get_item_name_short(item_text, armor_types)
+                        lookup_name = get_item_name_short(item_name_no_prefix, armor_types)
                         lookup_grade = '' if '/' in armor_grade or not bool(armor_grade) else (armor_grades[armor_grade] + ' ')
                         if not bool(lookup_name):
-                            item_name_short = item_text
+                            item_name_short = item_name_no_prefix
                         else:
                             item_name_short = str.format('%s%s%s' % (
                                 lookup_grade,
                                 lookup_name + ' ',
-                                armor_pieces[get_armor_piece(item_text)]))
+                                armor_pieces[get_armor_piece(item_name_no_prefix)]))
                     else:
-                        item_name_short = item_text
+                        item_name_short = item_name_no_prefix
 
                     count_armor += 1
                     if (is_pricecheck
@@ -1319,7 +1324,7 @@ def main():
                         and int(item_level) >= 45
                         and is_pricecheck_abbr_valid
                         and armor_grade.find('/') == -1):
-                        pricecheck_arg = format_for_pricecheck(armor_type.title(), abbrs, fed76_armor_abbrs, armor_grade or 'STURDY', armor_piece)
+                        pricecheck_arg = format_for_pricecheck(armor_type.title(), abbrs, fed76_armor_abbrs, armor_grade or 'STURDY', armor_piece_abbr)
                         url = pricecheck_api_url + pricecheck_arg
                         if pricecheck_arg and url in pricecheck_urls:
                             existing_count = pricecheck_urls[url][1]
@@ -1329,7 +1334,7 @@ def main():
                                 item_count + existing_count,
                                 item_type,
                                 armor_type,
-                                armor_piece,
+                                armor_piece_abbr,
                                 armor_grade,
                                 item_legendary_stars,
                                 item_level,
@@ -1340,7 +1345,7 @@ def main():
                                 item_sources[item_source],
                                 item_text]
                             continue
-                    item_id = str.format('%s %s %s %s %s %s' % (item_name_short, armor_type, armor_grade, armor_piece, item_legendary_abbr, item_level))
+                    item_id = str.format('%s %s %s %s %s %s' % (item_name_short, armor_type, armor_grade, armor_piece_abbr, item_legendary_abbr, item_level))
                     if item_id in items:
                         existing_count = items[item_id][1]
                         count_duplicate += 1
@@ -1348,7 +1353,7 @@ def main():
                         item_count,
                         item_type,
                         armor_type,
-                        armor_piece,
+                        armor_piece_abbr,
                         armor_grade,
                         item_legendary_stars,
                         item_level,
