@@ -1002,17 +1002,15 @@ def lookup_armor_grade(armor_full_name, armor_type, armor_piece, armor_level: st
 
 
 def get_armor_piece(item_text):
-    
     for i, (k, v) in enumerate(armor_pieces.items()):
-        if v.lower() in item_text.lower():
+        if any((_v in item_text.lower()) for _v in v.lower().split('||')):
             return k
     return ''
 
 
 def get_armor_piece_abbr(item_text):
-    
     for i, (k, v) in enumerate(armor_pieces.items()):
-        if v.lower() in item_text.lower():
+        if any((_v in item_text.lower()) for _v in v.lower().split('||')):
             return armor_pieces_abbr.get(k)
     return ''
 
@@ -1048,7 +1046,7 @@ def format_for_pricecheck(item_text: str, item_legendary_abbr, fed76_abbrs, armo
             if k in item_text:
                 item_arg = fed76_abbrs[1][k]
                 break
-        elif v in item_text:
+        elif v.lower() in item_text.lower():
             item_arg = fed76_abbrs[1][k]
             break
     
@@ -1312,10 +1310,10 @@ def main():
                             item_name_short = str.format('%s%s%s' % (
                                 lookup_grade,
                                 lookup_name + ' ',
-                                armor_pieces[get_armor_piece(item_name_no_prefix)]))
+                                armor_pieces[get_armor_piece(item_name_no_prefix)].split('||')[0]))
                     else:
                         item_name_short = item_name_no_prefix
-                    
+
                     count_armor += 1
                     if (is_pricecheck
                         and armor_type
