@@ -1028,10 +1028,8 @@ def remove_prefixes(item_text: str, prefixes_to_remove):
 def get_item_name_short(item_text: str, item_names):
     text = item_text.lower()
     for i, (k, v) in enumerate(item_names.items()):
-        if v in text:
-            if k == 'BOW' and item_names['COMPOUND'].lower() in text:
-                return item_names['COMPOUND']
-            elif k == 'RAIDER' and item_names['RAIDER_POWER'].lower() in text:
+        if v.lower() in text:
+            if k == 'RAIDER' and item_names['RAIDER_POWER'].lower() in text:
                 return item_names['RAIDER_POWER']
             elif k == 'MARINE' and item_names['ARCTIC_MARINE'].lower() in text:
                 return item_names['ARCTIC_MARINE']
@@ -1042,17 +1040,17 @@ def get_item_name_short(item_text: str, item_names):
     
 
 def format_for_pricecheck(item_text: str, item_legendary_abbr, fed76_abbrs, armor_grade: str = None, armor_piece: str = None):
+    if item_text == 'RAIDER_POWER':
+        return ''
     item_arg = ''
     for i, (k, v) in enumerate(fed76_abbrs[0].items()):
-        if v in item_text:
-            item_arg = fed76_abbrs[1][k]
-            if not armor_grade:
-                if v == 'bow' and 'Compound' in item_text:
-                    item_arg = fed76_abbrs[1]['COMPOUND']
+        if armor_grade:
+            if k in item_text:
+                item_arg = fed76_abbrs[1][k]
                 break
-            else:
-                if item_text == 'RAIDER_POWER':
-                    return ''
+        elif v in item_text:
+            item_arg = fed76_abbrs[1][k]
+            break
     
     if not item_arg:
         return ''
@@ -1152,7 +1150,7 @@ def main():
     parser = argparse.ArgumentParser(
         prog='InventOMatic-Parser',
         description='Script for parsing inventory dump from invent-o-matic stash for Fallout 76',
-        epilog='Version 1.3.3, Written by Zelia')
+        epilog='Version 1.3.4, Written by Zelia')
     parser.add_argument('-f', metavar='filename', type=str, required=True,
                         help='Path to inventory dump file')
     parser.add_argument('-l', metavar='language', type=str, default='en',
@@ -1317,14 +1315,14 @@ def main():
                                 armor_pieces[get_armor_piece(item_name_no_prefix)]))
                     else:
                         item_name_short = item_name_no_prefix
-
+                    
                     count_armor += 1
                     if (is_pricecheck
                         and armor_type
                         and int(item_level) >= 45
                         and is_pricecheck_abbr_valid
                         and armor_grade.find('/') == -1):
-                        pricecheck_arg = format_for_pricecheck(armor_type.title(), abbrs, fed76_armor_abbrs, armor_grade or 'STURDY', armor_piece_abbr)
+                        pricecheck_arg = format_for_pricecheck(armor_type, abbrs, fed76_armor_abbrs, armor_grade or 'STURDY', armor_piece_abbr)
                         url = pricecheck_api_url + pricecheck_arg
                         if pricecheck_arg and url in pricecheck_urls:
                             existing_count = pricecheck_urls[url][1]
@@ -1391,7 +1389,7 @@ def main():
                     item_name_short = get_item_name_short(item_text, fed76_weapon_abbrs[0])
                     if not bool(item_name_short):
                         item_name_short = remove_prefixes(item_text, weapon_effects[0])
-                        
+                    
                     count_weapon += 1
                     if (is_pricecheck
                         and item['itemLevel'] >= 45
